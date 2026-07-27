@@ -201,10 +201,10 @@ funcionales y testeadas de forma independiente
 - [X] T029 [P] Añadir validación de coordenadas fuera de rango
       (`fuera_de_rango`) compartida por `colocar_ficha` y `mover_ficha` en
       `backend/src/engine/rules.py` (edge case de `spec.md`)
-- [ ] T030 [P] Ejecutar manualmente la validación end-to-end de
+- [X] T030 [P] Ejecutar manualmente la validación end-to-end de
       `quickstart.md` (ambas modalidades) contra el servidor levantado con
       `uvicorn`
-- [ ] T031 Revisar que `GET /api/games/{game_id}` refleja siempre el
+- [X] T031 Revisar que `GET /api/games/{game_id}` refleja siempre el
       `GameState` completo y consistente tras cualquier combinación de
       tareas anteriores (T004-T028), en `backend/src/api/games.py`
 
