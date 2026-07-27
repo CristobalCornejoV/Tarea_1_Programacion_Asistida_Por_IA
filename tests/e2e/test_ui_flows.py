@@ -184,3 +184,67 @@ def test_jugar_partida(page: Page, live_server_url: str) -> None:
     expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
     expect(page.locator("#result-title")).to_have_text("Empate")
     expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
+
+
+def test_espera_agente(page: Page, live_server_url: str) -> None:
+    """CA-I-09 y CA-I-10: espera bloqueada y aplicación de jugada del agente."""
+
+    initial = _game_state()
+    after_human = _game_state(
+        board=[["X", None, None], [None, None, None], [None, None, None]],
+        turn="O",
+    )
+    after_agent = _game_state(
+        board=[["X", None, None], [None, "O", None], [None, None, None]],
+        turn="X",
+    )
+    engine_responses = [after_human, after_agent]
+    pending_agent_routes = []
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, initial, status=201),
+    )
+    page.route(
+        "**/api/games/*/moves",
+        lambda route: _fulfill_json(route, engine_responses.pop(0)),
+    )
+    page.route(
+        "**/api/agents/medio/move",
+        lambda route: pending_agent_routes.append(route),
+    )
+    page.goto(live_server_url)
+
+    page.get_by_label("Humano vs Agente").check()
+    page.get_by_label("Medio").check()
+    page.get_by_label("Jugador 1 usa X").check()
+    page.get_by_label("Clásica").check()
+    page.get_by_role("button", name="Iniciar partida").click()
+    with page.expect_request("**/api/agents/medio/move") as agent_request_info:
+        page.locator("#cell-0-0").click()
+
+    expect(page.locator("#app")).to_have_attribute(
+        "data-ui-state", "esperando_agente"
+    )
+    expect(page.locator("#agent-wait")).to_be_visible()
+    expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
+    expect(page.locator("#cell-1-1")).to_be_empty()
+
+    assert len(pending_agent_routes) == 1
+    agent_request = agent_request_info.value.post_data_json
+    assert set(agent_request) == {
+        "board",
+        "mode",
+        "phase",
+        "turn",
+        "fichas_disponibles",
+    }
+    _fulfill_json(
+        pending_agent_routes.pop(),
+        {"type": "colocar", "to": {"row": 1, "col": 1}},
+    )
+
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#agent-wait")).to_be_hidden()
+    expect(page.locator("#cell-1-1")).to_have_text("O")
+    expect(page.locator("#turn-detail")).to_contain_text("ficha X")

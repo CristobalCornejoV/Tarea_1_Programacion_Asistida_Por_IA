@@ -2,6 +2,7 @@ import {
   ErrorAPI,
   aplicarJugada,
   crearPartida,
+  obtenerJugadaAgente,
 } from "./api.js";
 import {
   inicializarTablero,
@@ -165,6 +166,65 @@ function pantallaParaGameState(gameState) {
     : PANTALLAS.TERMINADA;
 }
 
+function esTurnoAgente() {
+  return (
+    estadoUI.configuracion?.modo === "humano_vs_agente" &&
+    estadoUI.game_state?.status === "en_curso" &&
+    estadoUI.game_state.turn !== estadoUI.configuracion.ficha_jugador_1
+  );
+}
+
+function solicitudParaAgente(gameState) {
+  return {
+    board: gameState.board,
+    mode: gameState.mode,
+    phase: gameState.phase,
+    turn: gameState.turn,
+    fichas_disponibles: gameState.fichas_disponibles,
+  };
+}
+
+async function orquestarTurnoAgenteSiCorresponde() {
+  if (!esTurnoAgente()) {
+    return;
+  }
+
+  const estadoAntesDeJugada = estadoUI.game_state;
+  actualizarEstadoUI({
+    pantalla: PANTALLAS.ESPERANDO_AGENTE,
+    solicitud_en_curso: true,
+    aviso: null,
+  });
+
+  try {
+    const jugadaAgente = await obtenerJugadaAgente(
+      estadoUI.configuracion.nivel_agente,
+      solicitudParaAgente(estadoAntesDeJugada),
+    );
+    const gameState = await aplicarJugada(estadoAntesDeJugada.game_id, {
+      ...jugadaAgente,
+      player: estadoAntesDeJugada.turn,
+    });
+    actualizarEstadoUI({
+      game_state: gameState,
+      pantalla: pantallaParaGameState(gameState),
+      solicitud_en_curso: false,
+      casilla_seleccionada: null,
+      aviso: null,
+    });
+  } catch (error) {
+    const mensaje =
+      error instanceof ErrorAPI
+        ? error.message
+        : "El agente no pudo completar su jugada.";
+    actualizarEstadoUI({
+      pantalla: PANTALLAS.ESPERANDO_AGENTE,
+      solicitud_en_curso: false,
+      aviso: { tipo: "error", mensaje },
+    });
+  }
+}
+
 function jugadaColocacion(coordenada) {
   return {
     player: estadoUI.game_state.turn,
@@ -206,6 +266,7 @@ async function manejarSeleccionCasilla(coordenada) {
       casilla_seleccionada: null,
       aviso: null,
     });
+    await orquestarTurnoAgenteSiCorresponde();
   } catch (error) {
     const mensaje =
       error instanceof ErrorAPI
@@ -229,6 +290,7 @@ export async function iniciarPartida(configuracion) {
     solicitud_en_curso: false,
     aviso: null,
   });
+  await orquestarTurnoAgenteSiCorresponde();
 }
 
 function manejarCambioConfiguracion() {
