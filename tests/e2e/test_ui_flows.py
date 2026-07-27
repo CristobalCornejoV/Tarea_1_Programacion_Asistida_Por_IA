@@ -47,6 +47,13 @@ def _fulfill_json(route, payload: dict, status: int = 200) -> None:
     )
 
 
+def _select_human_game(page: Page, variant: str = "Clásica") -> None:
+    page.get_by_label("Humano vs Humano").check()
+    page.get_by_label("Jugador 1 usa X").check()
+    page.get_by_label(variant).check()
+    page.get_by_role("button", name="Iniciar partida").click()
+
+
 def test_configuracion_inicial(page: Page, live_server_url: str) -> None:
     """CA-I-01 a CA-I-04: configuración inicial, completa e incompleta."""
 
@@ -80,3 +87,100 @@ def test_configuracion_inicial(page: Page, live_server_url: str) -> None:
     expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
     expect(page.locator("#fact-mode")).to_have_text("Humano vs Agente")
     expect(page.locator("#fact-level")).to_have_text("Medio")
+
+
+def test_jugar_partida(page: Page, live_server_url: str) -> None:
+    """CA-I-05 a CA-I-08: turno, error, victoria, empate y bloqueo."""
+
+    initial = _game_state()
+    move_responses = [
+        _game_state(
+            board=[["X", None, None], [None, None, None], [None, None, None]],
+            turn="O",
+        ),
+        {
+            "error": "casilla_ocupada",
+            "message": "La casilla ya está ocupada.",
+            "_status": 422,
+        },
+        _game_state(
+            board=[["X", None, None], ["O", None, None], [None, None, None]],
+            turn="X",
+        ),
+        _game_state(
+            board=[["X", "X", None], ["O", None, None], [None, None, None]],
+            turn="O",
+        ),
+        _game_state(
+            board=[["X", "X", None], ["O", "O", None], [None, None, None]],
+            turn="X",
+        ),
+        _game_state(
+            board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+            turn="X",
+            status="victoria",
+            winner="X",
+            winning_line=[
+                {"row": 0, "col": 0},
+                {"row": 0, "col": 1},
+                {"row": 0, "col": 2},
+            ],
+        ),
+    ]
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, initial, status=201),
+    )
+
+    def handle_move(route) -> None:
+        response = move_responses.pop(0)
+        status = response.pop("_status", 200)
+        _fulfill_json(route, response, status=status)
+
+    page.route("**/api/games/*/moves", handle_move)
+    page.goto(live_server_url)
+    _select_human_game(page)
+
+    expect(page.locator("#turn-player")).to_contain_text("Jugador 1")
+    expect(page.locator("#turn-detail")).to_contain_text("ficha X")
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#turn-player")).to_contain_text("Jugador 2")
+    expect(page.locator("#turn-detail")).to_contain_text("ficha O")
+
+    board_before_error = page.locator("#board").inner_text()
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#game-notice")).to_contain_text("ocupada")
+    expect(page.locator("#board")).to_have_text(board_before_error)
+    expect(page.locator("#turn-detail")).to_contain_text("ficha O")
+
+    for cell_id in ("#cell-1-0", "#cell-0-1", "#cell-1-1", "#cell-0-2"):
+        page.locator(cell_id).click()
+
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
+    expect(page.locator(".board-cell.is-winning")).to_have_count(3)
+    expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
+    expect(page.locator("#result-title")).to_have_text("Victoria de X")
+
+    draw_states = [
+        _game_state(
+            game_id="draw-e2e",
+            board=[
+                ["X", "O", "X"],
+                ["X", "O", "O"],
+                ["O", "X", "X"],
+            ],
+            turn="O",
+            status="empate",
+        )
+    ]
+    move_responses.extend(draw_states)
+    initial["game_id"] = "draw-e2e"
+    page.reload()
+    _select_human_game(page)
+    page.locator("#cell-0-0").click()
+
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
+    expect(page.locator("#result-title")).to_have_text("Empate")
+    expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
