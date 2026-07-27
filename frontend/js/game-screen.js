@@ -19,6 +19,10 @@ import {
   suscribirEstado,
   volverAConfiguracion,
 } from "./state.js";
+import {
+  inicializarMarcador,
+  registrarResultado,
+} from "./scoreboard.js";
 
 const TEXTOS = Object.freeze({
   modos: {
@@ -158,6 +162,7 @@ function renderizarPantalla() {
     estadoUI.pantalla !== PANTALLAS.ESPERANDO_AGENTE;
 
   renderizarDatosPartida();
+  registrarResultado(estadoUI.game_state);
   renderizarTurno();
   renderizarAviso();
   renderizarResultado();
@@ -346,6 +351,13 @@ export async function iniciarPartida(configuracion) {
   await orquestarTurnoAgenteSiCorresponde();
 }
 
+async function reiniciarPartida() {
+  if (!estadoUI.configuracion) {
+    return;
+  }
+  await iniciarPartida(estadoUI.configuracion);
+}
+
 function manejarCambioConfiguracion() {
   volverAConfiguracion();
   prepararPantallaConfiguracion();
@@ -354,6 +366,7 @@ function manejarCambioConfiguracion() {
 function inicializar() {
   inicializarPantallaConfiguracion({ alIniciar: iniciarPartida });
   inicializarTablero(manejarSeleccionCasilla);
+  inicializarMarcador({ alReiniciar: reiniciarPartida });
   document
     .querySelector("#change-config")
     .addEventListener("click", manejarCambioConfiguracion);

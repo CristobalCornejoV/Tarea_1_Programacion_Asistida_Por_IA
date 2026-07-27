@@ -312,3 +312,65 @@ def test_modalidad_continua_movimiento(
             "to": {"row": 2, "col": 2},
         }
     ]
+
+
+def test_marcador_y_reinicio(page: Page, live_server_url: str) -> None:
+    """CA-I-13 a CA-I-15: marcador global, acumulación y reinicio."""
+
+    new_games = [
+        _game_state(game_id="score-game-1"),
+        _game_state(game_id="score-game-2"),
+    ]
+    final_states = [
+        _game_state(
+            game_id="score-game-1",
+            board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+            status="victoria",
+            winner="X",
+            winning_line=[
+                {"row": 0, "col": 0},
+                {"row": 0, "col": 1},
+                {"row": 0, "col": 2},
+            ],
+        ),
+        _game_state(
+            game_id="score-game-2",
+            board=[
+                ["X", "O", "X"],
+                ["X", "O", "O"],
+                ["O", "X", "X"],
+            ],
+            status="empate",
+        ),
+    ]
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, new_games.pop(0), status=201),
+    )
+    page.route(
+        "**/api/games/*/moves",
+        lambda route: _fulfill_json(route, final_states.pop(0)),
+    )
+    page.goto(live_server_url)
+
+    expect(page.locator(".scoreboard")).to_be_visible()
+    expect(page.locator("#score-x")).to_have_text("0")
+    _select_human_game(page)
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#score-x")).to_have_text("1")
+    expect(page.locator("#score-draws")).to_have_text("0")
+
+    page.get_by_role("button", name="Reiniciar partida").click()
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator(".board-cell")).to_have_text([""] * 9)
+    expect(page.locator("#fact-mode")).to_have_text("Humano vs Humano")
+    expect(page.locator("#fact-variant")).to_have_text("Clásica")
+    expect(page.locator("#score-x")).to_have_text("1")
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#score-draws")).to_have_text("1")
+    page.get_by_role("button", name="Cambiar configuración").click()
+    expect(page.locator("#config-screen")).to_be_visible()
+    expect(page.locator("#score-x")).to_have_text("1")
+    expect(page.locator("#score-draws")).to_have_text("1")
