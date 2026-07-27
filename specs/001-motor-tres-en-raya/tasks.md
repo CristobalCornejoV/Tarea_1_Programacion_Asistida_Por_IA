@@ -77,7 +77,7 @@ implementarse en paralelo si hay más de una persona
 de turnos, validación de jugadas y detección de victoria/empate
 
 **Independent Test**: Ejecutar `pytest backend/tests/unit/test_engine_rules.py
-backend/tests/contract/test_games_api.py -k classic` y validar
+backend/tests/contract/test_games_api.py` y validar
 manualmente con `quickstart.md` (sección "partida clásica hasta victoria")
 
 ### Tests para Modalidad Clásica (escribir primero, deben fallar)
@@ -118,8 +118,8 @@ manualmente con `quickstart.md` (sección "partida clásica hasta victoria")
       `backend/src/api/games.py`, traduciendo excepciones de
       `aplicar_jugada` a respuestas 422 con el `ErrorJugada` correspondiente
       (CA-M-02 a CA-M-07)
-- [ ] T016 [US1] Ejecutar `pytest backend/tests/unit/test_engine_rules.py
-      backend/tests/contract/test_games_api.py -k classic` y confirmar que
+- [X] T016 [US1] Ejecutar `pytest backend/tests/unit/test_engine_rules.py
+      backend/tests/contract/test_games_api.py` y confirmar que
       T007/T008 están en verde
 
 **Checkpoint**: Modalidad clásica completamente jugable y testeada de forma
