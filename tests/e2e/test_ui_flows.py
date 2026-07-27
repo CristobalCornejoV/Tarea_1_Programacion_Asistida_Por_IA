@@ -224,3 +224,38 @@ def test_espera_agente(page, base_url):
     en_terminada = page.locator("#pantalla-terminada").get_attribute("hidden") is None
     en_juego = page.locator("#pantalla-en_juego").get_attribute("hidden") is None
     assert en_terminada or en_juego
+
+
+def test_modalidad_continua_movimiento(page, base_url):
+    """T021: cubre CA-I-11, CA-I-12 (modo Humano vs Humano, continua)."""
+    _iniciar_partida(
+        page, base_url, modo="humano_vs_humano", ficha_jugador_1="X", modalidad="continua"
+    )
+
+    # Fase de colocación: X en (0,0),(0,1),(1,0); O en (2,2),(2,1),(1,2).
+    colocaciones = [
+        (0, 0, "X"), (2, 2, "O"), (0, 1, "X"),
+        (2, 1, "O"), (1, 0, "X"), (1, 2, "O"),
+    ]
+    for fila, col, ficha in colocaciones:
+        _jugar_casilla(page, fila, col, ficha)
+
+    # CA-I-11: en fase de movimiento, turno de X: sus 3 fichas propias
+    # quedan señaladas como movibles; las de O no.
+    for fila, col in [(0, 0), (0, 1), (1, 0)]:
+        expect(_celda(page, fila, col)).to_have_class("casilla casilla-movible")
+    for fila, col in [(2, 2), (2, 1), (1, 2)]:
+        expect(_celda(page, fila, col)).to_have_class("casilla")
+
+    # Selecciona una ficha movible.
+    _celda(page, 0, 0).click()
+    expect(_celda(page, 0, 0)).to_have_class("casilla casilla-movible casilla-seleccionada")
+
+    # CA-I-12: las 3 casillas vacías quedan señaladas como destino válido.
+    for fila, col in [(0, 2), (1, 1), (2, 0)]:
+        expect(_celda(page, fila, col)).to_have_class("casilla casilla-destino")
+
+    # Mueve a una casilla no adyacente: CA-M-11 del motor ya lo permite.
+    _celda(page, 2, 0).click()
+    expect(_celda(page, 2, 0)).to_have_text("X")
+    expect(_celda(page, 0, 0)).to_have_text("")

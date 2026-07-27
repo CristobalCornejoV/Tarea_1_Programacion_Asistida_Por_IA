@@ -200,7 +200,7 @@ durante la fase de movimiento
 
 ### Tests para US4 (escribir primero, deben fallar)
 
-- [ ] T021 [P] [US4] Test e2e en
+- [X] T021 [P] [US4] Test e2e en
       `tests/e2e/test_ui_flows.py::test_modalidad_continua_movimiento`: en
       fase de movimiento se señalan las fichas propias movibles (CA-I-11);
       al seleccionar una, se señalan las casillas vacías disponibles como
@@ -208,16 +208,16 @@ durante la fase de movimiento
 
 ### Implementación para US4
 
-- [ ] T022 [US4] Implementar en `frontend/js/board.js` el cálculo y
+- [X] T022 [US4] Implementar en `frontend/js/board.js` el cálculo y
       resaltado de las fichas propias del jugador humano cuando
       `game_state.mode = "continua"`, `game_state.phase = "movimiento"` y
       es su turno (CA-I-11)
-- [ ] T023 [US4] Implementar en `frontend/js/board.js` /
+- [X] T023 [US4] Implementar en `frontend/js/board.js` /
       `frontend/js/game-screen.js` el resaltado de casillas vacías
       disponibles al seleccionar una ficha movible, y la construcción de la
       `Jugada` tipo `"mover"` (`from`/`to`) hacia la casilla elegida
       (CA-I-12)
-- [ ] T024 [US4] Ejecutar `pytest tests/e2e/test_ui_flows.py -k continua` y
+- [X] T024 [US4] Ejecutar `pytest tests/e2e/test_ui_flows.py -k continua` y
       confirmar que T021 está en verde
 
 **Checkpoint**: Modalidad continua completamente jugable con señalización
