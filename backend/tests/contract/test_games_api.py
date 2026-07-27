@@ -301,3 +301,22 @@ def test_post_moves_rechaza_jugada_tras_finalizar_continua():  # CA-M-15
     resp = _mover(gid, "O", 1, 2, 1, 1)
     assert resp.status_code == 422
     assert resp.json()["error"] == "partida_finalizada"
+
+
+# --- Coordenadas fuera de rango (T029, edge case de spec.md) ----------------
+
+
+def test_post_moves_rechaza_colocar_fuera_de_rango():
+    data = _crear_partida_clasica()
+    resp = _jugar(data["game_id"], "X", 3, 0)
+    assert resp.status_code == 422
+    assert resp.json()["error"] == "fuera_de_rango"
+
+
+def test_post_moves_rechaza_mover_fuera_de_rango():
+    data = _crear_partida_continua()
+    gid = data["game_id"]
+    _colocar_hasta_movimiento(gid)
+    resp = _mover(gid, "X", 0, 0, 9, 9)
+    assert resp.status_code == 422
+    assert resp.json()["error"] == "fuera_de_rango"

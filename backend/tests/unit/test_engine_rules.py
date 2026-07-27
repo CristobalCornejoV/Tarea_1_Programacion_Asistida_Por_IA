@@ -236,3 +236,35 @@ def test_rechaza_jugada_tras_finalizar_en_continua():  # CA-M-15 (partida finali
     with pytest.raises(JugadaInvalida) as exc:
         aplicar_jugada(estado, _mover("O", 1, 2, 1, 1))
     assert exc.value.codigo == "partida_finalizada"
+
+
+# --- Coordenadas fuera de rango (T029, edge case de spec.md) ----------------
+
+
+def test_rechaza_colocar_fuera_de_rango():
+    estado = crear_partida("clasica")
+    with pytest.raises(JugadaInvalida) as exc:
+        aplicar_jugada(estado, _colocar("X", 3, 0))
+    assert exc.value.codigo == "fuera_de_rango"
+    assert all(casilla is None for fila in estado.board for casilla in fila)
+
+
+def test_rechaza_colocar_con_columna_negativa():
+    estado = crear_partida("clasica")
+    with pytest.raises(JugadaInvalida) as exc:
+        aplicar_jugada(estado, _colocar("X", 0, -1))
+    assert exc.value.codigo == "fuera_de_rango"
+
+
+def test_rechaza_mover_con_origen_fuera_de_rango():
+    estado = _estado_en_movimiento()
+    with pytest.raises(JugadaInvalida) as exc:
+        aplicar_jugada(estado, _mover("X", 5, 0, 1, 1))
+    assert exc.value.codigo == "fuera_de_rango"
+
+
+def test_rechaza_mover_con_destino_fuera_de_rango():
+    estado = _estado_en_movimiento()
+    with pytest.raises(JugadaInvalida) as exc:
+        aplicar_jugada(estado, _mover("X", 0, 0, 0, 7))
+    assert exc.value.codigo == "fuera_de_rango"

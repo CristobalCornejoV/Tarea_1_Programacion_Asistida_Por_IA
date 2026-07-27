@@ -9,7 +9,7 @@ from typing import Literal
 
 from backend.src.engine.repetition import registrar_posicion
 from backend.src.engine.win_detection import comprobar_victoria
-from backend.src.models.game_state import GameState, Jugada
+from backend.src.models.game_state import Coordenada, GameState, Jugada
 
 
 class JugadaInvalida(Exception):
@@ -27,6 +27,20 @@ def _tablero_vacio() -> list[list[None]]:
 
 def _otro(jugador: Literal["X", "O"]) -> Literal["X", "O"]:
     return "O" if jugador == "X" else "X"
+
+
+def _dentro_del_tablero(coord: Coordenada) -> bool:
+    return 0 <= coord.row <= 2 and 0 <= coord.col <= 2
+
+
+def _validar_rango(*coords: Coordenada) -> None:
+    """CA-M-*: rechaza coordenadas fuera de las 3x3 casillas del tablero."""
+    for coord in coords:
+        if not _dentro_del_tablero(coord):
+            raise JugadaInvalida(
+                "fuera_de_rango",
+                f"La casilla ({coord.row}, {coord.col}) está fuera del tablero.",
+            )
 
 
 def crear_partida(mode: Literal["clasica", "continua"]) -> GameState:
@@ -74,6 +88,7 @@ def colocar_ficha(estado: GameState, jugada: Jugada) -> GameState:
             "fase_incorrecta",
             "No se puede colocar una ficha fuera de la fase de colocación.",
         )
+    _validar_rango(jugada.to)
 
     fila, col = jugada.to.row, jugada.to.col
     if estado.board[fila][col] is not None:
@@ -137,6 +152,7 @@ def mover_ficha(estado: GameState, jugada: Jugada) -> GameState:
             "fase_incorrecta",
             "Solo se puede mover una ficha en la fase de movimiento de la modalidad continua.",
         )
+    _validar_rango(jugada.from_, jugada.to)
 
     fila_o, col_o = jugada.from_.row, jugada.from_.col
     fila_d, col_d = jugada.to.row, jugada.to.col

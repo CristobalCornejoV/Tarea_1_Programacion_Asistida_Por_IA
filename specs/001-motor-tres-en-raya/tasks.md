@@ -198,7 +198,7 @@ funcionales y testeadas de forma independiente
 
 **Purpose**: Casos límite transversales a ambas modalidades
 
-- [ ] T029 [P] Añadir validación de coordenadas fuera de rango
+- [X] T029 [P] Añadir validación de coordenadas fuera de rango
       (`fuera_de_rango`) compartida por `colocar_ficha` y `mover_ficha` en
       `backend/src/engine/rules.py` (edge case de `spec.md`)
 - [ ] T030 [P] Ejecutar manualmente la validación end-to-end de

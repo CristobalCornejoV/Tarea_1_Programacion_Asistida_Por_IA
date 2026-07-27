@@ -9,12 +9,19 @@ Casilla = Optional[Ficha]
 
 
 class Coordenada(BaseModel):
-    """Posición de una casilla del tablero (fila/columna, 0-2)."""
+    """Posición de una casilla del tablero (fila/columna).
+
+    No se restringe aquí al rango 0-2: el motor (colocar_ficha/mover_ficha
+    en rules.py) valida el rango explícitamente y responde con el código de
+    error `fuera_de_rango` (CA-M-*, edge case de spec.md), en lugar de que
+    Pydantic rechace la petición HTTP con un cuerpo que no coincide con el
+    contrato `ErrorJugada`.
+    """
 
     model_config = ConfigDict(frozen=True)
 
-    row: int = Field(ge=0, le=2)
-    col: int = Field(ge=0, le=2)
+    row: int
+    col: int
 
 
 class GameState(BaseModel):
