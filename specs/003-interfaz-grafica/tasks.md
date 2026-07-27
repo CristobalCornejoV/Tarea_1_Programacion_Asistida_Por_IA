@@ -92,7 +92,7 @@ partida
 
 ### Tests para US1 (escribir primero, deben fallar)
 
-- [ ] T007 [P] [US1] Test e2e en `tests/e2e/test_ui_flows.py::test_configuracion_inicial`:
+- [X] T007 [P] [US1] Test e2e en `tests/e2e/test_ui_flows.py::test_configuracion_inicial`:
       la pantalla inicial es Configuración (CA-I-01), permite elegir modo,
       fichas, modalidad y nivel de agente cuando corresponde (CA-I-02),
       confirma el inicio con selección completa (CA-I-03), y rechaza el
@@ -101,18 +101,18 @@ partida
 
 ### Implementación para US1
 
-- [ ] T008 [US1] Implementar `frontend/js/config-screen.js`: renderiza los
+- [X] T008 [US1] Implementar `frontend/js/config-screen.js`: renderiza los
       controles de modo, ficha, modalidad y nivel de agente (visible solo
       si `modo = "humano_vs_agente"`) sobre `EstadoUI.configuracion`
       (CA-I-01, CA-I-02)
-- [ ] T009 [US1] Implementar en `frontend/js/config-screen.js` la
+- [X] T009 [US1] Implementar en `frontend/js/config-screen.js` la
       validación de selección completa antes de habilitar "iniciar", y el
       aviso visual de qué falta si se intenta confirmar incompleto
       (CA-I-04)
-- [ ] T010 [US1] Conectar el botón "iniciar" en `frontend/js/config-screen.js`
+- [X] T010 [US1] Conectar el botón "iniciar" en `frontend/js/config-screen.js`
       a `api.crearPartida(configuracion.modalidad)` y transicionar
       `EstadoUI.pantalla` a `"en_juego"` con la respuesta (CA-I-03)
-- [ ] T011 [US1] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
+- [X] T011 [US1] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
       configuracion` y confirmar que T007 está en verde
 
 **Checkpoint**: Configuración inicial completamente funcional y testeada de

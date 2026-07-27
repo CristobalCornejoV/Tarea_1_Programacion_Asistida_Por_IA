@@ -39,3 +39,18 @@ export function configuracionEstaCompleta(configuracion) {
   if (modo === "humano_vs_agente" && !nivel_agente) return false;
   return true;
 }
+
+const PANTALLAS = ["configuracion", "en_juego", "esperando_agente", "terminada"];
+
+/**
+ * Transiciona EstadoUI.pantalla y muestra/oculta los 4 contenedores de
+ * index.html (uno por valor de `pantalla`) de forma centralizada, para que
+ * config-screen.js y game-screen.js no dupliquen esta lógica.
+ */
+export function mostrarPantalla(pantalla) {
+  EstadoUI.pantalla = pantalla;
+  for (const nombre of PANTALLAS) {
+    const elemento = document.getElementById(`pantalla-${nombre}`);
+    if (elemento) elemento.hidden = nombre !== pantalla;
+  }
+}
