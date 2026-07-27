@@ -38,7 +38,7 @@ pytest backend/tests/contract/test_agents_api.py -k "tiempo" -v
 ```
 
 **Resultado esperado**: cada nivel de agente responde en menos de 1 segundo
-sobre cualquier estado de tablero válido (CA-A-10 / SC-004).
+sobre cualquier estado de tablero válido (SC-004).
 
 ## Ejecutar toda la suite de la feature
 

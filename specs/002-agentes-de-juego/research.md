@@ -28,7 +28,7 @@
   9! ≈ 362,880 secuencias (mucho menor con poda y simetrías), por lo que un
   cálculo completo desde cero SHALL resolverse muy por debajo de 1 segundo
   incluso sin memoización; la memoización (Decisión 3) es una optimización
-  adicional, no un requisito para cumplir CA-A-10/SC-004.
+  adicional, no un requisito para cumplir SC-004.
 - **Rationale**: Minimax con poda alfa-beta es el enfoque estándar y
   demostrablemente óptimo para tres en raya clásico, y es el mecanismo más
   simple que garantiza matemáticamente CA-A-07/CA-A-08 (nunca perder).

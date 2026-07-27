@@ -46,7 +46,7 @@ con las specs 001 y 003)
 
 **Performance Goals**: Cada respuesta de jugada de cualquier agente, en
 cualquier nivel, SHALL completarse en menos de 1 segundo (Principio VI de la
-constitución, y SC-004/CA-A-10 de esta spec) — condiciona directamente la
+constitución, y SC-004 de esta spec) — condiciona directamente la
 elección del algoritmo del agente Complejo (ver `research.md` Decisión 2)
 
 **Constraints**: Los agentes MUST comportarse como funciones puras desde la

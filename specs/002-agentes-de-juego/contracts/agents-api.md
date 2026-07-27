@@ -51,4 +51,4 @@ En modalidad continua, fase de movimiento:
 | `POST /api/agents/sencillo/move` | CA-A-01, CA-A-02 |
 | `POST /api/agents/medio/move` | CA-A-03, CA-A-04, CA-A-05, CA-A-06 |
 | `POST /api/agents/complejo/move` | CA-A-07, CA-A-08, CA-A-09 |
-| Todo el endpoint (tiempo de respuesta) | CA-A-10 |
+| Todo el endpoint (tiempo de respuesta) | SC-004 |
