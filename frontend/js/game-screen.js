@@ -127,6 +127,16 @@ function renderizarResultado() {
   }
 }
 
+function renderizarAyudaMovimiento() {
+  const gameState = estadoUI.game_state;
+  const visible =
+    estadoUI.pantalla === PANTALLAS.EN_JUEGO &&
+    gameState?.mode === "continua" &&
+    gameState.phase === "movimiento" &&
+    !esTurnoAgente();
+  document.querySelector("#movement-help").hidden = !visible;
+}
+
 function renderizarPantalla() {
   const esConfiguracion = estadoUI.pantalla === PANTALLAS.CONFIGURACION;
   const app = document.querySelector("#app");
@@ -151,6 +161,7 @@ function renderizarPantalla() {
   renderizarTurno();
   renderizarAviso();
   renderizarResultado();
+  renderizarAyudaMovimiento();
   renderizarTablero({
     gameState: estadoUI.game_state,
     pantalla: estadoUI.pantalla,
@@ -233,22 +244,16 @@ function jugadaColocacion(coordenada) {
   };
 }
 
-async function manejarSeleccionCasilla(coordenada) {
-  if (
-    estadoUI.pantalla !== PANTALLAS.EN_JUEGO ||
-    estadoUI.solicitud_en_curso ||
-    estadoUI.game_state?.status !== "en_curso"
-  ) {
-    return;
-  }
+function jugadaMovimiento(origen, destino) {
+  return {
+    player: estadoUI.game_state.turn,
+    type: "mover",
+    from: origen,
+    to: destino,
+  };
+}
 
-  if (
-    estadoUI.game_state.mode === "continua" &&
-    estadoUI.game_state.phase === "movimiento"
-  ) {
-    return;
-  }
-
+async function enviarJugada(jugada) {
   actualizarEstadoUI({
     solicitud_en_curso: true,
     aviso: null,
@@ -257,7 +262,7 @@ async function manejarSeleccionCasilla(coordenada) {
   try {
     const gameState = await aplicarJugada(
       estadoUI.game_state.game_id,
-      jugadaColocacion(coordenada),
+      jugada,
     );
     actualizarEstadoUI({
       game_state: gameState,
@@ -277,6 +282,54 @@ async function manejarSeleccionCasilla(coordenada) {
       aviso: { tipo: "error", mensaje },
     });
   }
+}
+
+async function manejarSeleccionCasilla(coordenada) {
+  if (
+    estadoUI.pantalla !== PANTALLAS.EN_JUEGO ||
+    estadoUI.solicitud_en_curso ||
+    estadoUI.game_state?.status !== "en_curso"
+  ) {
+    return;
+  }
+
+  const gameState = estadoUI.game_state;
+  const esMovimiento =
+    gameState.mode === "continua" && gameState.phase === "movimiento";
+  if (!esMovimiento) {
+    await enviarJugada(jugadaColocacion(coordenada));
+    return;
+  }
+
+  const fichaSeleccionada = gameState.board[coordenada.row][coordenada.col];
+  if (estadoUI.casilla_seleccionada === null) {
+    if (fichaSeleccionada === gameState.turn) {
+      actualizarEstadoUI({
+        casilla_seleccionada: coordenada,
+        aviso: null,
+      });
+    } else {
+      actualizarEstadoUI({
+        aviso: {
+          tipo: "error",
+          mensaje: "Selecciona primero una de las fichas movibles señaladas.",
+        },
+      });
+    }
+    return;
+  }
+
+  if (fichaSeleccionada === gameState.turn) {
+    actualizarEstadoUI({
+      casilla_seleccionada: coordenada,
+      aviso: null,
+    });
+    return;
+  }
+
+  await enviarJugada(
+    jugadaMovimiento(estadoUI.casilla_seleccionada, coordenada),
+  );
 }
 
 export async function iniciarPartida(configuracion) {

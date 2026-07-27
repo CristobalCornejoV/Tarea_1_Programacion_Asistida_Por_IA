@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -248,3 +249,66 @@ def test_espera_agente(page: Page, live_server_url: str) -> None:
     expect(page.locator("#agent-wait")).to_be_hidden()
     expect(page.locator("#cell-1-1")).to_have_text("O")
     expect(page.locator("#turn-detail")).to_contain_text("ficha X")
+
+
+def test_modalidad_continua_movimiento(
+    page: Page, live_server_url: str
+) -> None:
+    """CA-I-11 y CA-I-12: fichas movibles y destinos disponibles."""
+
+    movement_state = _game_state(
+        mode="continua",
+        phase="movimiento",
+        board=[
+            ["X", "O", "X"],
+            ["O", "X", "O"],
+            [None, None, None],
+        ],
+        turn="X",
+    )
+    after_move = _game_state(
+        mode="continua",
+        phase="movimiento",
+        board=[
+            [None, "O", "X"],
+            ["O", "X", "O"],
+            [None, None, "X"],
+        ],
+        turn="O",
+    )
+    captured_moves = []
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, movement_state, status=201),
+    )
+
+    def handle_move(route) -> None:
+        captured_moves.append(route.request.post_data_json)
+        _fulfill_json(route, after_move)
+
+    page.route("**/api/games/*/moves", handle_move)
+    page.goto(live_server_url)
+    _select_human_game(page, variant="Continua")
+
+    expect(page.locator("#movement-help")).to_be_visible()
+    expect(page.locator(".board-cell.is-movable")).to_have_count(3)
+    expect(page.locator(".board-cell.is-destination")).to_have_count(0)
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#cell-0-0")).to_have_class(
+        re.compile(r"\bis-selected\b")
+    )
+    expect(page.locator(".board-cell.is-destination")).to_have_count(3)
+    page.locator("#cell-2-2").click()
+
+    expect(page.locator("#cell-2-2")).to_have_text("X")
+    expect(page.locator(".board-cell.is-selected")).to_have_count(0)
+    assert captured_moves == [
+        {
+            "player": "X",
+            "type": "mover",
+            "from": {"row": 0, "col": 0},
+            "to": {"row": 2, "col": 2},
+        }
+    ]
