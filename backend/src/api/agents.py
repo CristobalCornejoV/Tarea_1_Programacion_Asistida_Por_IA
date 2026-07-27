@@ -10,7 +10,8 @@ from typing import Callable, Literal, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.src.agents import simple
+from backend.src.agents import complex as complex_agent
+from backend.src.agents import medium, simple
 from backend.src.models.game_state import Casilla, Coordenada, Ficha, GameState, Jugada
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
@@ -56,6 +57,8 @@ def _estado_desde_solicitud(solicitud: SolicitudJugadaAgente) -> GameState:
 # implementa (US1: sencillo, US2: medio, US3: complejo).
 AGENTES: dict[str, Callable[[GameState], Jugada]] = {
     "sencillo": simple.decidir_jugada,
+    "medio": medium.decidir_jugada,
+    "complejo": complex_agent.decidir_jugada,
 }
 
 

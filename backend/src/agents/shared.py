@@ -5,8 +5,15 @@ Reutilizan exclusivamente el motor de la spec 001
 de solo lectura; ningún agente reimplementa reglas de juego.
 """
 
+from typing import Optional
+
 from backend.src.engine.rules import aplicar_jugada
-from backend.src.models.game_state import Coordenada, GameState, Jugada
+from backend.src.engine.win_detection import comprobar_victoria
+from backend.src.models.game_state import Coordenada, Ficha, GameState, Jugada
+
+
+def otro_jugador(jugador: Ficha) -> Ficha:
+    return "O" if jugador == "X" else "X"
 
 
 def listar_jugadas_legales(estado: GameState) -> list[Jugada]:
@@ -30,6 +37,11 @@ def listar_jugadas_legales(estado: GameState) -> list[Jugada]:
     ]
 
     if estado.mode == "clasica" or estado.phase == "colocacion":
+        if estado.mode == "continua" and estado.fichas_disponibles.get(jugador, 0) <= 0:
+            # `jugador` ya agotó sus fichas de colocación (solo puede darse
+            # al evaluar hipotéticamente el turno del rival, ver
+            # detectar_jugada_ganadora); no tiene jugada de colocar posible.
+            return []
         return [
             Jugada(player=jugador, type="colocar", to=Coordenada(row=fila, col=col))
             for fila, col in vacias
@@ -65,3 +77,22 @@ def simular_jugada(estado: GameState, jugada: Jugada) -> GameState:
     `JugadaInvalida` aquí.
     """
     return aplicar_jugada(estado, jugada)
+
+
+def detectar_jugada_ganadora(estado: GameState, jugador: Ficha) -> Optional[Jugada]:
+    """Devuelve una jugada de `jugador` que le da la victoria inmediata, si existe.
+
+    `jugador` puede ser distinto de `estado.turn` (p. ej. el agente Medio
+    evaluando si el rival podría ganar en su próximo turno, CA-A-04): en
+    ese caso se evalúa hipotéticamente un estado con el turno de
+    `jugador`, reutilizando `listar_jugadas_legales` y `simular_jugada` sin
+    modificar `estado`. Usada también por el agente Complejo (CA-A-08).
+    """
+    estado_hipotetico = (
+        estado if jugador == estado.turn else estado.model_copy(update={"turn": jugador})
+    )
+    for jugada in listar_jugadas_legales(estado_hipotetico):
+        resultado = simular_jugada(estado_hipotetico, jugada)
+        if comprobar_victoria(resultado.board) is not None:
+            return jugada
+    return None
