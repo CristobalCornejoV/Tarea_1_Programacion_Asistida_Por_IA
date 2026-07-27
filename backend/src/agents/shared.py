@@ -12,8 +12,24 @@ from backend.src.engine.win_detection import comprobar_victoria
 from backend.src.models.game_state import Coordenada, Ficha, GameState, Jugada
 
 
+class SinJugadasLegales(Exception):
+    """No hay jugadas legales disponibles: tablero sin casillas vacías (u
+    otra razón que agote las opciones) o partida ya finalizada."""
+
+
 def otro_jugador(jugador: Ficha) -> Ficha:
     return "O" if jugador == "X" else "X"
+
+
+def asegurar_jugada_disponible(estado: GameState) -> None:
+    """Lanza `SinJugadasLegales` si no existe ninguna jugada legal para
+    `estado.turn` (edge case de `spec.md`): tablero lleno o partida ya
+    finalizada. Los tres niveles de agente comparten esta validación
+    llamándola antes de decidir su jugada."""
+    if not listar_jugadas_legales(estado):
+        raise SinJugadasLegales(
+            "No hay jugadas legales disponibles para el estado dado."
+        )
 
 
 def listar_jugadas_legales(estado: GameState) -> list[Jugada]:

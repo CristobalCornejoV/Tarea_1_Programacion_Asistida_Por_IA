@@ -5,6 +5,7 @@ Optimalidad acotada a modalidad clásica (ver Assumptions de `spec.md` y
 """
 
 from backend.src.agents import complex as complex_agent
+from backend.src.agents import simple
 from backend.src.engine.rules import aplicar_jugada, crear_partida
 from backend.src.models.game_state import Coordenada, Jugada
 
@@ -75,3 +76,34 @@ def test_memoizacion_reutiliza_resultado_ya_evaluado():  # CA-A-09
     # ningún crecimiento adicional de la caché.
     assert resultado_2 == resultado_1
     assert len(complex_agent._memo) == tam_tras_primera_llamada
+
+
+def test_no_pierde_una_partida_previamente_reproducida_con_cache_persistente():
+    """Regresión: con random.seed(758), jugando Complejo=X vs Sencillo=O con
+    la caché de _negamax ya usada en turnos anteriores de la MISMA partida,
+    Complejo llegaba a una posición con victoria inmediata en (2,2)
+    (diagonal (0,0),(1,1),(2,2)) y en su lugar jugaba (1,0), perdiendo la
+    partida.
+
+    Causa raíz: la caché guardaba también cotas (no solo valores exactos)
+    de búsquedas podadas por alfa-beta, y una cota obsoleta (aunque
+    técnicamente correcta para la ventana con la que se calculó) se usaba
+    para acotar alpha/beta de una llamada posterior con una ventana
+    distinta, provocando un corte prematuro que nunca llegó a evaluar la
+    respuesta ganadora real del rival. Corregido memoizando únicamente
+    valores exactos (búsquedas no podadas).
+    """
+    import random
+
+    random.seed(758)
+    complex_agent._memo.clear()
+
+    estado = crear_partida("clasica")
+    while estado.status == "en_curso":
+        if estado.turn == "X":
+            jugada = complex_agent.decidir_jugada(estado)
+        else:
+            jugada = simple.decidir_jugada(estado)
+        estado = aplicar_jugada(estado, jugada)
+
+    assert not (estado.status == "victoria" and estado.winner == "O")

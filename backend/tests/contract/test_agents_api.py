@@ -1,8 +1,12 @@
 """Tests de contrato HTTP de la API de agentes: Sencillo (T006, CA-A-01,
-CA-A-02), Medio (T011, CA-A-03 a CA-A-06) y Complejo (T018, CA-A-08).
+CA-A-02), Medio (T011, CA-A-03 a CA-A-06), Complejo (T018, CA-A-08),
+rechazo sin jugadas legales (T027, edge case de spec.md) y tiempo de
+respuesta (T026, SC-004, Principio VI de la constitución).
 
 Ver `contracts/agents-api.md`.
 """
+
+import time
 
 from fastapi.testclient import TestClient
 
@@ -128,3 +132,32 @@ def test_post_agents_complejo_move_juega_victoria_inmediata():  # CA-A-08
     resp = client.post("/api/agents/complejo/move", json=body)
     assert resp.status_code == 200
     assert resp.json()["to"] == {"row": 0, "col": 2}
+
+
+def test_post_agents_move_rechaza_sin_jugadas_legales_tablero_lleno():  # T027
+    body = {
+        "board": [["X", "O", "X"], ["X", "O", "O"], ["O", "X", "X"]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+    }
+    for nivel in ("sencillo", "medio", "complejo"):
+        resp = client.post(f"/api/agents/{nivel}/move", json=body)
+        assert resp.status_code == 422
+
+
+def test_post_agents_move_responde_en_menos_de_1_segundo_tiempo():  # T026, SC-004
+    body = {
+        "board": [[None, None, None], [None, None, None], [None, None, None]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+    }
+    for nivel in ("sencillo", "medio", "complejo"):
+        inicio = time.perf_counter()
+        resp = client.post(f"/api/agents/{nivel}/move", json=body)
+        duracion = time.perf_counter() - inicio
+        assert resp.status_code == 200
+        assert duracion < 1.0, f"{nivel} tardó {duracion:.3f}s (límite: 1s)"

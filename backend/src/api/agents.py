@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from backend.src.agents import complex as complex_agent
 from backend.src.agents import medium, simple
+from backend.src.agents.shared import SinJugadasLegales, asegurar_jugada_disponible
 from backend.src.models.game_state import Casilla, Coordenada, Ficha, GameState, Jugada
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
@@ -69,5 +70,9 @@ def decidir_jugada_endpoint(level: str, solicitud: SolicitudJugadaAgente):
     if decidir_jugada is None:
         raise HTTPException(status_code=404, detail=f"Nivel de agente desconocido: {level}")
     estado = _estado_desde_solicitud(solicitud)
+    try:
+        asegurar_jugada_disponible(estado)
+    except SinJugadasLegales as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     jugada = decidir_jugada(estado)
     return JugadaAgenteResponse.desde_jugada(jugada)

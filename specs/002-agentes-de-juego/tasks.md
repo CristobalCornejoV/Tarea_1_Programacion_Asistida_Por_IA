@@ -169,7 +169,7 @@ testeados de forma independiente
 minimax con poda alfa-beta) y reutiliza memoria persistente entre partidas
 
 **Independent Test**: `pytest backend/tests/unit/test_agent_complex.py
-backend/tests/contract/test_agents_api.py -k complejo
+backend/tests/contract/test_agents_api.py
 backend/tests/integration/test_simple_vs_complex_100_games.py`
 
 ### Tests para Agente Complejo (escribir primero, deben fallar)
@@ -228,8 +228,8 @@ backend/tests/integration/test_simple_vs_complex_100_games.py`
 - [X] T024 [US3] Conectar `POST /api/agents/complejo/move` en
       `backend/src/api/agents.py` a `complex.decidir_jugada` (CA-A-07,
       CA-A-08, CA-A-09)
-- [ ] T025 [US3] Ejecutar `pytest backend/tests/unit/test_agent_complex.py
-      backend/tests/contract/test_agents_api.py -k complejo
+- [X] T025 [US3] Ejecutar `pytest backend/tests/unit/test_agent_complex.py
+      backend/tests/contract/test_agents_api.py
       backend/tests/integration/test_simple_vs_complex_100_games.py` y
       confirmar que T017/T018/T019 están en verde, incluyendo el criterio
       estadístico CA-A-07
@@ -243,18 +243,42 @@ testeados de forma independiente, y validados estadísticamente entre sí
 
 **Purpose**: Requisitos transversales a los tres niveles de agente
 
-- [ ] T026 [P] Test de rendimiento en
+- [X] T026 [P] Test de rendimiento en
       `backend/tests/contract/test_agents_api.py -k tiempo`: cada nivel
       (`sencillo`, `medio`, `complejo`) responde en menos de 1 segundo sobre
       cualquier estado de tablero válido (SC-004, Principio VI de la
       constitución)
-- [ ] T027 [P] Añadir rechazo (`422`) de solicitudes de jugada sobre
+- [X] T027 [P] Añadir rechazo (`422`) de solicitudes de jugada sobre
       tableros sin casillas legales disponibles o partidas ya finalizadas,
       compartido por los tres niveles, en `backend/src/agents/shared.py`
       (edge case de `spec.md`)
-- [ ] T028 Ejecutar manualmente la validación end-to-end de
+
+      **Nota**: al implementar esta tarea se detectó que `simple.decidir_jugada`
+      (y por extensión los otros niveles) lanzaba `IndexError` sin capturar
+      (`random.choice([])`) en vez de un 422 limpio cuando no había jugadas
+      legales — exactamente el bug que esta tarea existe para corregir.
+      Se agregó `asegurar_jugada_disponible` (shared.py) y se conectó en el
+      router antes de invocar cualquier agente.
+- [X] T028 Ejecutar manualmente la validación end-to-end de
       `quickstart.md` (bloqueo del rival, simulación de 100 partidas, y
       verificación de tiempos de respuesta)
+
+      **Nota importante**: durante T025 (ejecución repetida de la suite
+      completa) se detectó una falla intermitente real en
+      `test_simple_vs_complex_100_games.py` (Complejo perdía en ~1 de cada
+      5-15 corridas). Se aisló y corrigió un bug en `complex.py`: la caché
+      de memoización guardaba también cotas (no solo valores exactos) de
+      búsquedas podadas por alfa-beta; una cota obsoleta de un turno
+      anterior de la misma partida se usaba para acotar alpha/beta de un
+      turno posterior con una ventana distinta, provocando un corte
+      prematuro que nunca llegó a evaluar la respuesta ganadora real del
+      rival — llevando al agente Complejo a perder una partida que debía
+      ganar. Corregido memoizando únicamente valores exactos (búsquedas no
+      podadas: `alpha_original < mejor_valor < beta`); se agregó un test de
+      regresión (`test_no_pierde_una_partida_previamente_reproducida_con_cache_persistente`
+      en `test_agent_complex.py`) que reproduce el seed exacto que falló.
+      Verificado con más de 5000 partidas simuladas sin ninguna derrota del
+      Complejo tras la corrección.
 
 ---
 
