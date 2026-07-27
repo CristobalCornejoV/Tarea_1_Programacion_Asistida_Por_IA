@@ -5,6 +5,7 @@ Reutilizan exclusivamente el motor de la spec 001
 de solo lectura; ningún agente reimplementa reglas de juego.
 """
 
+from backend.src.engine.rules import aplicar_jugada
 from backend.src.models.game_state import Coordenada, GameState, Jugada
 
 
@@ -51,3 +52,16 @@ def listar_jugadas_legales(estado: GameState) -> list[Jugada]:
         for fila_o, col_o in propias
         for fila_d, col_d in vacias
     ]
+
+
+def simular_jugada(estado: GameState, jugada: Jugada) -> GameState:
+    """Envoltorio de solo lectura sobre `aplicar_jugada` del motor (spec 001).
+
+    Los agentes lo usan para explorar hipotéticamente el resultado de una
+    jugada (p. ej. para detectar victorias o amenazas) sin duplicar
+    ninguna regla de juego: `estado` no se modifica, se recibe un
+    `GameState` nuevo. Se asume que `jugada` proviene de
+    `listar_jugadas_legales(estado)` y por tanto es legal; no se captura
+    `JugadaInvalida` aquí.
+    """
+    return aplicar_jugada(estado, jugada)

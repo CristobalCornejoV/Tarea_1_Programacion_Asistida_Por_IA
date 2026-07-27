@@ -57,11 +57,11 @@ esta fase
       `backend/src/models/game_state.py` de la spec 001 (colocar en modo
       clásico/fase colocación, mover en fase movimiento) — base de CA-A-01,
       CA-A-02, CA-A-03, CA-A-05, CA-A-08
-- [ ] T003 [P] Implementar `simular_jugada(estado: GameState, jugada:
+- [X] T003 [P] Implementar `simular_jugada(estado: GameState, jugada:
       Jugada) -> GameState` en `backend/src/agents/shared.py`, como envoltorio
       de solo lectura sobre `aplicar_jugada` del motor (spec 001) — base de
       CA-A-03, CA-A-04, CA-A-08
-- [ ] T004 Crear el router FastAPI `backend/src/api/agents.py` con
+- [X] T004 Crear el router FastAPI `backend/src/api/agents.py` con
       `POST /api/agents/{level}/move` (despacho por `level` a
       `sencillo`/`medio`/`complejo`, 404 si el nivel no existe) y montarlo en
       `backend/src/main.py`
@@ -82,23 +82,23 @@ backend/tests/contract/test_agents_api.py -k sencillo`
 
 ### Tests para Agente Sencillo (escribir primero, deben fallar)
 
-- [ ] T005 [P] [US1] Test unitario en
+- [X] T005 [P] [US1] Test unitario en
       `backend/tests/unit/test_agent_simple.py`: toda jugada devuelta es
       legal para el tablero dado (CA-A-01), y sobre múltiples llamadas al
       mismo estado la distribución de casillas elegidas cubre todas las
       opciones legales sin depender de llamadas anteriores (CA-A-02)
-- [ ] T006 [P] [US1] Test de contrato en
+- [X] T006 [P] [US1] Test de contrato en
       `backend/tests/contract/test_agents_api.py -k sencillo`:
       `POST /api/agents/sencillo/move` devuelve 200 con una `Jugada` legal
       para distintos estados de tablero (CA-A-01, CA-A-02)
 
 ### Implementación para Agente Sencillo
 
-- [ ] T007 [US1] Implementar `decidir_jugada(estado: GameState) -> Jugada`
+- [X] T007 [US1] Implementar `decidir_jugada(estado: GameState) -> Jugada`
       en `backend/src/agents/simple.py` usando `random.choice` sobre
       `listar_jugadas_legales(estado)` (T002), sin leer ni escribir ningún
       estado propio entre llamadas (CA-A-01, CA-A-02)
-- [ ] T008 [US1] Conectar `POST /api/agents/sencillo/move` en
+- [X] T008 [US1] Conectar `POST /api/agents/sencillo/move` en
       `backend/src/api/agents.py` a `simple.decidir_jugada` (CA-A-01,
       CA-A-02)
 - [ ] T009 [US1] Ejecutar `pytest backend/tests/unit/test_agent_simple.py
