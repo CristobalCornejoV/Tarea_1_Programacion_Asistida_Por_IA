@@ -134,7 +134,7 @@ colocación, transición a fase de movimiento, movimiento libre a cualquier
 casilla vacía, y empate por repetición de posición
 
 **Independent Test**: Ejecutar `pytest backend/tests/unit/test_engine_rules.py
-backend/tests/contract/test_games_api.py -k continuous` y validar
+backend/tests/contract/test_games_api.py` y validar
 manualmente con `quickstart.md` (sección "modalidad continua completa")
 
 ### Tests para Modalidad Continua (escribir primero, deben fallar)
@@ -185,8 +185,8 @@ manualmente con `quickstart.md` (sección "modalidad continua completa")
 - [X] T027 [US2] Conectar `mode: "continua"` en `POST /api/games` y en
       `POST /api/games/{game_id}/moves` (tipo `"mover"`) en
       `backend/src/api/games.py` (CA-M-08 a CA-M-15 expuestos vía HTTP)
-- [ ] T028 [US2] Ejecutar `pytest backend/tests/unit/test_engine_rules.py
-      backend/tests/contract/test_games_api.py -k continuous` y confirmar
+- [X] T028 [US2] Ejecutar `pytest backend/tests/unit/test_engine_rules.py
+      backend/tests/contract/test_games_api.py` y confirmar
       que T017/T018 están en verde
 
 **Checkpoint**: Ambas modalidades (clásica y continua) completamente
