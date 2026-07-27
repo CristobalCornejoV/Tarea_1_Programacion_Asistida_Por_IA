@@ -82,7 +82,7 @@ manualmente con `quickstart.md` (sección "partida clásica hasta victoria")
 
 ### Tests para Modalidad Clásica (escribir primero, deben fallar)
 
-- [ ] T007 [P] [US1] Tests unitarios del motor en modalidad clásica en
+- [X] T007 [P] [US1] Tests unitarios del motor en modalidad clásica en
       `backend/tests/unit/test_engine_rules.py`: estado inicial (CA-M-01),
       colocar en turno válido (CA-M-02), rechazo de casilla ocupada
       (CA-M-03), rechazo fuera de turno (CA-M-04), detección de las 8
@@ -97,16 +97,16 @@ manualmente con `quickstart.md` (sección "partida clásica hasta victoria")
 
 ### Implementación para Modalidad Clásica
 
-- [ ] T009 [US1] Implementar `crear_partida(mode)` en
+- [X] T009 [US1] Implementar `crear_partida(mode)` en
       `backend/src/engine/rules.py` produciendo el `GameState` inicial con
       tablero vacío y turno "X" (CA-M-01)
-- [ ] T010 [US1] Implementar `colocar_ficha(estado, jugada)` en
+- [X] T010 [US1] Implementar `colocar_ficha(estado, jugada)` en
       `backend/src/engine/rules.py`: valida turno y casilla vacía, coloca la
       ficha y alterna el turno (CA-M-02, CA-M-03, CA-M-04)
-- [ ] T011 [US1] Integrar `comprobar_victoria` y detección de empate por
+- [X] T011 [US1] Integrar `comprobar_victoria` y detección de empate por
       tablero lleno dentro de `aplicar_jugada(estado, jugada)` en
       `backend/src/engine/rules.py` (CA-M-05, CA-M-06)
-- [ ] T012 [US1] Añadir rechazo de cualquier jugada cuando
+- [X] T012 [US1] Añadir rechazo de cualquier jugada cuando
       `estado.status != "en_curso"` en `aplicar_jugada` en
       `backend/src/engine/rules.py` (CA-M-07)
 - [ ] T013 [US1] Implementar `POST /api/games` (creación con `mode:
