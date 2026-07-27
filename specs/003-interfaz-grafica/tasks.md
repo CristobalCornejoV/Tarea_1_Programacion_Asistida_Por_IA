@@ -20,12 +20,12 @@ con un navegador controlado (ver `research.md` Decisión 4).
 **Organization**: Tareas agrupadas por historia de usuario (US1 =
 Configurar Partida, US2 = Jugar Partida, US3 = Esperar Agente, US4 = Mover en
 Modalidad Continua, US5 = Marcador y Reinicio, US6 = Teclado / Requisito
-Excelente).
+Excelente, US7 = Diseño Responsive).
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Puede ejecutarse en paralelo (archivos distintos, sin dependencias)
-- **[Story]**: US1 a US6
+- **[Story]**: US1 a US7
 - Cada tarea indica ruta de archivo exacta y los CA-I-* que cubre
 
 ## Recordatorio de gates de la constitución
@@ -60,7 +60,7 @@ Excelente).
 
 **Purpose**: Cliente de API y estado de UI que todas las historias necesitan
 
-**⚠️ CRITICAL**: Ninguna tarea de US1-US6 puede iniciarse hasta completar
+**⚠️ CRITICAL**: Ninguna tarea de US1-US7 puede iniciarse hasta completar
 esta fase
 
 - [ ] T004 [P] Implementar `frontend/js/api.js`: `crearPartida(mode)`,
@@ -299,13 +299,65 @@ Excelente) sin romper la operación por mouse
 
 ---
 
-## Phase 9: Polish & Cross-Cutting Concerns
+## Phase 9: Uso en Pantallas de Distinto Tamaño — Responsive (Priority: P3)
+
+**Goal**: Tablero, marcador y controles de Configuración permanecen
+visibles y operables, sin scroll horizontal ni zoom manual, en anchos de
+viewport de ~320px a 1920px (móvil, tablet, escritorio)
+
+**Independent Test**: `pytest tests/e2e/test_ui_flows.py -k responsive`
+
+### Tests para US7 (escribir primero, deben fallar)
+
+- [ ] T035 [P] [US7] Test e2e en
+      `tests/e2e/test_ui_flows.py::test_responsive_sin_scroll_horizontal`:
+      en tres anchos de viewport representativos (móvil ~375px, tablet
+      ~768px, escritorio ~1440px), el tablero, el marcador y los controles
+      de Configuración son visibles y no aparece scroll horizontal
+      (CA-I-19, CA-I-20)
+- [ ] T036 [P] [US7] Test e2e en
+      `tests/e2e/test_ui_flows.py::test_responsive_objetivo_tactil`: en el
+      ancho móvil, cada casilla del tablero mide al menos ~44x44px CSS
+      (CA-I-21)
+- [ ] T037 [P] [US7] Test e2e en
+      `tests/e2e/test_ui_flows.py::test_responsive_resize_preserva_estado`:
+      con una partida en curso y foco de teclado activo, redimensionar el
+      viewport SHALL preservar el tablero, turno, fase, marcador y foco
+      vigente (CA-I-22)
+
+### Implementación para US7
+
+- [ ] T038 [US7] Añadir `<meta name="viewport"
+      content="width=device-width, initial-scale=1">` en
+      `frontend/index.html` y un reset CSS base "mobile-first" en
+      `frontend/css/styles.css`
+- [ ] T039 [US7] Implementar en `frontend/css/styles.css` la disposición
+      responsive de tablero, marcador y controles de Configuración con
+      Flexbox/Grid y unidades relativas, reordenando mediante media
+      queries sin provocar scroll horizontal en ningún ancho del rango
+      320px-1920px (CA-I-19, CA-I-20)
+- [ ] T040 [US7] Asegurar en `frontend/css/styles.css` que cada casilla del
+      tablero mantiene un tamaño mínimo de objetivo táctil (~44x44px CSS)
+      en todos los anchos soportados (CA-I-21)
+- [ ] T041 [US7] Confirmar que ningún dato de `EstadoUI` (tablero, turno,
+      fase, marcador, foco) se deriva de o se ve alterado por el tamaño de
+      viewport — el layout responsive es puramente CSS (CA-I-22)
+- [ ] T042 [US7] Ejecutar `pytest tests/e2e/test_ui_flows.py -k responsive`
+      y confirmar que T035/T036/T037 están en verde
+
+**Checkpoint**: Interfaz completamente utilizable en móvil, tablet y
+escritorio sin scroll horizontal ni pérdida de estado al redimensionar
+
+---
+
+## Phase 10: Polish & Cross-Cutting Concerns
 
 **Purpose**: Validación manual final transversal a todas las historias
 
-- [ ] T035 [P] Ejecutar manualmente la validación completa de
-      `quickstart.md` (flujo con mouse y flujo exclusivamente por teclado)
-- [ ] T036 [P] Revisar que ningún archivo bajo `frontend/js/` contiene
+- [ ] T043 [P] Ejecutar manualmente la validación completa de
+      `quickstart.md` (flujo con mouse, flujo exclusivamente por teclado, y
+      diseño responsive en los tres anchos de referencia)
+- [ ] T044 [P] Revisar que ningún archivo bajo `frontend/js/` contiene
       lógica de reglas de juego (victoria, empate, legalidad, heurística de
       agente), confirmando que toda decisión de negocio proviene de
       `api.js` (Principio II de la constitución)
@@ -328,13 +380,17 @@ Excelente) sin romper la operación por mouse
   de partida ya finalizada para acumular marcador)
 - **US6 (Phase 8)**: Depende de que US1-US5 ya funcionen por mouse; añade
   una capa de accesibilidad sobre ellas sin modificarlas
-- **Polish (Phase 9)**: Depende de que todas las historias estén completas
+- **US7 (Phase 9)**: Depende de Foundational y de US1/US2 (necesita una
+  Configuración y una partida jugable para validar el layout en distintos
+  anchos); es independiente de US3-US6, ya que solo modifica CSS
+- **Polish (Phase 10)**: Depende de que todas las historias estén completas
 
 ### Parallel Opportunities
 
 - T002 y T003 en paralelo tras T001
 - T004 y T005 en paralelo dentro de Foundational
-- T035 y T036 en paralelo dentro de Polish
+- T035, T036 y T037 en paralelo dentro de US7 (tests)
+- T043 y T044 en paralelo dentro de Polish
 
 ---
 
@@ -367,5 +423,6 @@ Task: "Test e2e de partida completa en tests/e2e/test_ui_flows.py::test_jugar_pa
 4. US4 → añade modalidad continua
 5. US5 → añade continuidad entre partidas (marcador y reinicio)
 6. US6 → añade accesibilidad completa por teclado (Requisito Excelente)
-7. Polish → validación manual final y revisión de separación de
+7. US7 → añade diseño responsive (móvil/tablet/escritorio)
+8. Polish → validación manual final y revisión de separación de
    responsabilidades

@@ -199,6 +199,47 @@ teclado.
 
 ---
 
+### User Story 7 - Uso en Pantallas de Distinto Tamaño (Responsive) (Priority: P3)
+
+El usuario puede configurar y jugar una partida completa desde un
+navegador de escritorio, tablet o móvil: el tablero, el marcador y los
+controles de Configuración permanecen legibles, alcanzables y operables
+sin necesidad de desplazamiento horizontal ni de hacer zoom manual, sea
+cual sea el tamaño de la ventana o dispositivo.
+
+**Why this priority**: Es un requisito de alcance de dispositivo adicional
+que se apoya sobre todas las demás historias ya funcionando en escritorio
+(US1-US6); se prioriza al final porque adapta la presentación visual sin
+modificar el comportamiento funcional ya definido.
+
+**Independent Test**: Se puede probar por completo abriendo la interfaz en
+al menos tres anchos de viewport representativos (móvil, tablet,
+escritorio), completando en cada uno el flujo de configurar, jugar hasta
+el final, y reiniciar una partida, y verificando que ningún control queda
+oculto, cortado, o requiere desplazamiento horizontal.
+
+**Acceptance Scenarios** (notación EARS):
+
+- **CA-I-19**: LA interfaz SHALL permanecer completamente utilizable —
+  tablero, marcador y controles de Configuración visibles y operables sin
+  desplazamiento horizontal— en anchos de viewport típicos de dispositivos
+  móviles, tablets y escritorio (aproximadamente 320px a 1920px de ancho).
+- **CA-I-20**: MIENTRAS el ancho de viewport sea reducido (dispositivo
+  móvil o ventana angosta), LA interfaz SHALL reorganizar la disposición
+  de sus elementos (tablero, marcador, controles de Configuración) para
+  que el tablero y los controles imprescindibles para la jugada actual
+  permanezcan visibles sin necesidad de que el usuario haga zoom manual.
+- **CA-I-21**: EN cualquier tamaño de viewport soportado, LA interfaz SHALL
+  mantener cada casilla del tablero con un tamaño suficiente para una
+  interacción táctil precisa (objetivo de toque), evitando que dos
+  casillas adyacentes sean indistinguibles al tacto.
+- **CA-I-22**: CUANDO el usuario redimensiona la ventana o rota el
+  dispositivo durante una partida en curso, LA interfaz SHALL reajustar su
+  disposición visual sin alterar el estado de la partida (tablero, turno,
+  fase, marcador) ni, si aplica, el foco de teclado vigente.
+
+---
+
 ### Edge Cases
 
 - ¿Qué ocurre si el usuario cambia una selección de Configuración
@@ -218,6 +259,11 @@ teclado.
   reiniciar? La interfaz SHALL conservar igualmente el marcador acumulado de
   la sesión, dado que este se asocia a la sesión y no a una configuración
   específica.
+- ¿Qué ocurre si el ancho de viewport es más angosto que el mínimo
+  soportado (por debajo de ~320px)? La interfaz SHALL priorizar mantener el
+  tablero y el control de jugada actual operables, permitiendo en ese caso
+  extremo que elementos secundarios (p. ej. el marcador histórico completo)
+  requieran desplazamiento vertical, pero nunca horizontal.
 
 ## Requirements *(mandatory)*
 
@@ -255,6 +301,12 @@ teclado.
   incluyendo navegación (Tab, flechas de dirección) y selección/confirmación
   (Enter, Espacio), y MUST mostrar en todo momento una indicación visual del
   elemento con foco de teclado.
+- **FR-010**: La interfaz MUST presentar un diseño responsive: tablero,
+  marcador y controles de Configuración MUST permanecer visibles y
+  operables, sin desplazamiento horizontal, en anchos de viewport típicos
+  de móvil, tablet y escritorio (aproximadamente 320px a 1920px), y MUST
+  reajustar su disposición ante un cambio de tamaño de ventana sin alterar
+  el estado de la partida en curso.
 
 ### Key Entities
 
@@ -290,6 +342,10 @@ teclado.
 - **SC-006**: El marcador de sesión refleja, sin pérdida ni reinicio
   accidental, el resultado acumulado de todas las partidas jugadas en la
   sesión, incluyendo tras cualquier número de reinicios de partida.
+- **SC-007**: Un usuario puede completar el flujo completo de configurar,
+  jugar hasta el final, y reiniciar una partida en cualquier ancho de
+  viewport entre 320px y 1920px, sin necesidad de desplazamiento horizontal
+  ni de hacer zoom manual en ningún paso.
 
 ## Assumptions
 
@@ -308,3 +364,9 @@ teclado.
 - El "Requisito Excelente" de operación completa por teclado (US6) aplica
   como capa adicional sobre el resto de historias de usuario y no reemplaza
   ni restringe la operación equivalente mediante puntero (mouse/touch).
+- El diseño responsive (US7) no fija breakpoints exactos ni un catálogo de
+  dispositivos soportados; el rango de referencia (320px-1920px de ancho de
+  viewport) es un estándar razonable de la industria para cubrir móvil,
+  tablet y escritorio, y la adaptación entre esos anchos SHOULD ser fluida
+  (sin saltos bruscos de utilizabilidad) en lugar de basarse en un número
+  fijo de puntos de quiebre.
