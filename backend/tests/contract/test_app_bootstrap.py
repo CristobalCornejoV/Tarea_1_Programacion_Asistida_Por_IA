@@ -1,9 +1,8 @@
-"""Tests fundacionales del esqueleto de la app FastAPI (T006).
+"""Tests fundacionales de FastAPI y del montaje estático de la interfaz.
 
-No cubren un CA-M-* de comportamiento de juego (el router de /api/games aún
-no tiene endpoints; esos llegan en las tareas de US1/US2); verifican que la
-app arranca, el router está montado bajo el prefijo correcto, y el almacén
-en memoria existe y comienza vacío.
+Verifican que la app arranca, el router de partidas conserva su prefijo, el
+almacén en memoria comienza vacío y servir ``frontend/`` desde ``/`` no
+interfiere con las rutas de la API.
 """
 
 from fastapi.testclient import TestClient
@@ -32,3 +31,22 @@ def test_router_games_tiene_el_prefijo_correcto():
 
 def test_almacen_en_memoria_de_partidas_inicia_vacio():
     assert partidas == {}
+
+
+def test_frontend_estatico_sirve_index_html_en_raiz():  # T045
+    client = TestClient(app)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Tres en Raya — Partida</title>" in response.text
+
+
+def test_montaje_estatico_no_interfiere_con_las_rutas_api():  # T045
+    client = TestClient(app)
+
+    response = client.post("/api/games", json={"mode": "clasica"})
+
+    assert response.status_code == 201
+    assert response.json()["mode"] == "clasica"
