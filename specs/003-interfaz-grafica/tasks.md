@@ -44,13 +44,13 @@ Excelente, US7 = Diseño Responsive).
 
 **Purpose**: Esqueleto estático del frontend y arnés de pruebas e2e
 
-- [ ] T001 Crear `frontend/index.html`, `frontend/css/styles.css` y los
+- [X] T001 Crear `frontend/index.html`, `frontend/css/styles.css` y los
       módulos vacíos `frontend/js/{api,state,board,config-screen,
       game-screen,scoreboard,keyboard}.js`, según `plan.md` → Project
       Structure
-- [ ] T002 [P] Montar `frontend/` como archivos estáticos en
+- [X] T002 [P] Montar `frontend/` como archivos estáticos en
       `backend/src/main.py` (`StaticFiles`), sirviendo `index.html` en `/`
-- [ ] T003 [P] Añadir dependencia de test de navegador controlado (p. ej.
+- [X] T003 [P] Añadir dependencia de test de navegador controlado (p. ej.
       `pytest-playwright`) y crear `tests/e2e/` con configuración base para
       servir `frontend/` durante los tests
 
@@ -63,17 +63,17 @@ Excelente, US7 = Diseño Responsive).
 **⚠️ CRITICAL**: Ninguna tarea de US1-US7 puede iniciarse hasta completar
 esta fase
 
-- [ ] T004 [P] Implementar `frontend/js/api.js`: `crearPartida(mode)`,
+- [X] T004 [P] Implementar `frontend/js/api.js`: `crearPartida(mode)`,
       `obtenerPartida(gameId)`, `aplicarJugada(gameId, jugada)`,
       `obtenerJugadaAgente(nivel, solicitud)`, envolviendo `fetch` hacia los
       contratos de `001-motor-tres-en-raya/contracts/games-api.md` y
       `002-agentes-de-juego/contracts/agents-api.md` — único módulo que
       conoce URLs y forma de las peticiones HTTP
-- [ ] T005 [P] Implementar `frontend/js/state.js`: objeto `EstadoUI`
+- [X] T005 [P] Implementar `frontend/js/state.js`: objeto `EstadoUI`
       (`pantalla`, `configuracion`, `game_state`, `foco_actual`,
       `casilla_seleccionada`) y `MarcadorSesion`, exactamente según
       `data-model.md`
-- [ ] T006 Implementar el esqueleto de `frontend/index.html` con los
+- [X] T006 Implementar el esqueleto de `frontend/index.html` con los
       contenedores de las 4 pantallas (Configuración, En Juego/Esperando
       Agente, Terminada) y un estilo base de foco visible en
       `frontend/css/styles.css` (base para CA-I-17, refinado en US6)
@@ -92,7 +92,7 @@ partida
 
 ### Tests para US1 (escribir primero, deben fallar)
 
-- [ ] T007 [P] [US1] Test e2e en `tests/e2e/test_ui_flows.py::test_configuracion_inicial`:
+- [X] T007 [P] [US1] Test e2e en `tests/e2e/test_ui_flows.py::test_configuracion_inicial`:
       la pantalla inicial es Configuración (CA-I-01), permite elegir modo,
       fichas, modalidad y nivel de agente cuando corresponde (CA-I-02),
       confirma el inicio con selección completa (CA-I-03), y rechaza el
@@ -101,18 +101,18 @@ partida
 
 ### Implementación para US1
 
-- [ ] T008 [US1] Implementar `frontend/js/config-screen.js`: renderiza los
+- [X] T008 [US1] Implementar `frontend/js/config-screen.js`: renderiza los
       controles de modo, ficha, modalidad y nivel de agente (visible solo
       si `modo = "humano_vs_agente"`) sobre `EstadoUI.configuracion`
       (CA-I-01, CA-I-02)
-- [ ] T009 [US1] Implementar en `frontend/js/config-screen.js` la
+- [X] T009 [US1] Implementar en `frontend/js/config-screen.js` la
       validación de selección completa antes de habilitar "iniciar", y el
       aviso visual de qué falta si se intenta confirmar incompleto
       (CA-I-04)
-- [ ] T010 [US1] Conectar el botón "iniciar" en `frontend/js/config-screen.js`
+- [X] T010 [US1] Conectar el botón "iniciar" en `frontend/js/config-screen.js`
       a `api.crearPartida(configuracion.modalidad)` y transicionar
       `EstadoUI.pantalla` a `"en_juego"` con la respuesta (CA-I-03)
-- [ ] T011 [US1] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
+- [X] T011 [US1] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
       configuracion` y confirmar que T007 está en verde
 
 **Checkpoint**: Configuración inicial completamente funcional y testeada de
@@ -129,7 +129,7 @@ resaltados y bloqueo del tablero, recibir aviso ante jugada ilegal
 
 ### Tests para US2 (escribir primero, deben fallar)
 
-- [ ] T012 [P] [US2] Test e2e en `tests/e2e/test_ui_flows.py::test_jugar_partida`:
+- [X] T012 [P] [US2] Test e2e en `tests/e2e/test_ui_flows.py::test_jugar_partida`:
       se indica turno y ficha durante la partida (CA-I-05); al ganar se
       resalta la línea ganadora y se bloquea el tablero (CA-I-06); al
       empatar se indica el empate y se bloquea el tablero (CA-I-07); una
@@ -137,18 +137,18 @@ resaltados y bloqueo del tablero, recibir aviso ante jugada ilegal
 
 ### Implementación para US2
 
-- [ ] T013 [US2] Implementar `frontend/js/board.js`: renderiza el tablero
+- [X] T013 [US2] Implementar `frontend/js/board.js`: renderiza el tablero
       3x3 a partir de `game_state.board` e indica de quién es el turno y
       su ficha a partir de `game_state.turn` (CA-I-05)
-- [ ] T014 [US2] Implementar en `frontend/js/board.js` el resaltado de
+- [X] T014 [US2] Implementar en `frontend/js/board.js` el resaltado de
       `game_state.winning_line` y el bloqueo de interacción cuando
       `game_state.status != "en_curso"` (CA-I-06, CA-I-07)
-- [ ] T015 [US2] Implementar en `frontend/js/game-screen.js` el manejador de
+- [X] T015 [US2] Implementar en `frontend/js/game-screen.js` el manejador de
       clic sobre una casilla: construye la `Jugada` y llama
       `api.aplicarJugada`; en `200 OK` actualiza `EstadoUI.game_state`; en
       `422` muestra el aviso visual de error usando el campo `error` de la
       respuesta sin modificar `EstadoUI.game_state` (CA-I-08)
-- [ ] T016 [US2] Ejecutar `pytest tests/e2e/test_ui_flows.py -k partida` y
+- [X] T016 [US2] Ejecutar `pytest tests/e2e/test_ui_flows.py -k partida` y
       confirmar que T012 está en verde
 
 **Checkpoint**: Ciclo completo de partida (clásica, contra otro humano)
@@ -165,7 +165,7 @@ el tablero mientras tanto
 
 ### Tests para US3 (escribir primero, deben fallar)
 
-- [ ] T017 [P] [US3] Test e2e en
+- [X] T017 [P] [US3] Test e2e en
       `tests/e2e/test_ui_flows.py::test_espera_agente`: al llegar el turno
       de un agente se muestra la indicación de espera y se deshabilita el
       tablero (CA-I-09); al recibir la jugada del agente se oculta la
@@ -174,16 +174,16 @@ el tablero mientras tanto
 
 ### Implementación para US3
 
-- [ ] T018 [US3] Implementar en `frontend/js/game-screen.js` la detección
+- [X] T018 [US3] Implementar en `frontend/js/game-screen.js` la detección
       de turno de agente (a partir de `game_state.turn` y
       `EstadoUI.configuracion`), transicionando `EstadoUI.pantalla` a
       `"esperando_agente"` y deshabilitando el tablero (CA-I-09)
-- [ ] T019 [US3] Implementar en `frontend/js/game-screen.js` la llamada a
+- [X] T019 [US3] Implementar en `frontend/js/game-screen.js` la llamada a
       `api.obtenerJugadaAgente(nivel, subconjuntoEstado)` seguida de
       `api.aplicarJugada` con la jugada recibida, ocultando la indicación
       de espera y retornando a `"en_juego"` o `"terminada"` según la
       respuesta (CA-I-10)
-- [ ] T020 [US3] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
+- [X] T020 [US3] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
       espera_agente` y confirmar que T017 está en verde
 
 **Checkpoint**: Partidas Humano vs Agente completamente jugables con
@@ -200,7 +200,7 @@ durante la fase de movimiento
 
 ### Tests para US4 (escribir primero, deben fallar)
 
-- [ ] T021 [P] [US4] Test e2e en
+- [X] T021 [P] [US4] Test e2e en
       `tests/e2e/test_ui_flows.py::test_modalidad_continua_movimiento`: en
       fase de movimiento se señalan las fichas propias movibles (CA-I-11);
       al seleccionar una, se señalan las casillas vacías disponibles como
@@ -208,16 +208,16 @@ durante la fase de movimiento
 
 ### Implementación para US4
 
-- [ ] T022 [US4] Implementar en `frontend/js/board.js` el cálculo y
+- [X] T022 [US4] Implementar en `frontend/js/board.js` el cálculo y
       resaltado de las fichas propias del jugador humano cuando
       `game_state.mode = "continua"`, `game_state.phase = "movimiento"` y
       es su turno (CA-I-11)
-- [ ] T023 [US4] Implementar en `frontend/js/board.js` /
+- [X] T023 [US4] Implementar en `frontend/js/board.js` /
       `frontend/js/game-screen.js` el resaltado de casillas vacías
       disponibles al seleccionar una ficha movible, y la construcción de la
       `Jugada` tipo `"mover"` (`from`/`to`) hacia la casilla elegida
       (CA-I-12)
-- [ ] T024 [US4] Ejecutar `pytest tests/e2e/test_ui_flows.py -k continua` y
+- [X] T024 [US4] Ejecutar `pytest tests/e2e/test_ui_flows.py -k continua` y
       confirmar que T021 está en verde
 
 **Checkpoint**: Modalidad continua completamente jugable con señalización
@@ -234,7 +234,7 @@ perderlo
 
 ### Tests para US5 (escribir primero, deben fallar)
 
-- [ ] T025 [P] [US5] Test e2e en
+- [X] T025 [P] [US5] Test e2e en
       `tests/e2e/test_ui_flows.py::test_marcador_y_reinicio`: el marcador
       se mantiene visible y acumula victorias/empates tras cada partida
       (CA-I-13, CA-I-14); "reiniciar" inicia una nueva partida con la misma
@@ -242,15 +242,15 @@ perderlo
 
 ### Implementación para US5
 
-- [ ] T026 [US5] Implementar `frontend/js/scoreboard.js`: renderiza
+- [X] T026 [US5] Implementar `frontend/js/scoreboard.js`: renderiza
       `MarcadorSesion` de forma visible en toda pantalla de juego, y lo
       incrementa exactamente una vez por cada `GameState` recibido con
       `status != "en_curso"` (CA-I-13, CA-I-14)
-- [ ] T027 [US5] Implementar en `frontend/js/scoreboard.js` el control de
+- [X] T027 [US5] Implementar en `frontend/js/scoreboard.js` el control de
       "reiniciar": repite la secuencia de creación de partida con
       `EstadoUI.configuracion` vigente sin modificar `MarcadorSesion`
       (CA-I-15)
-- [ ] T028 [US5] Ejecutar `pytest tests/e2e/test_ui_flows.py -k marcador` y
+- [X] T028 [US5] Ejecutar `pytest tests/e2e/test_ui_flows.py -k marcador` y
       confirmar que T025 está en verde
 
 **Checkpoint**: Marcador de sesión y reinicio completamente funcionales
@@ -266,7 +266,7 @@ exclusivamente el teclado
 
 ### Tests para US6 (escribir primero, deben fallar)
 
-- [ ] T029 [P] [US6] Test e2e en
+- [X] T029 [P] [US6] Test e2e en
       `tests/e2e/test_ui_flows.py::test_operacion_por_teclado`: completa,
       solo con teclado, el flujo de Configuración → partida completa
       (incluyendo una jugada rechazada por ilegal) → reinicio, verificando
@@ -276,22 +276,22 @@ exclusivamente el teclado
 
 ### Implementación para US6
 
-- [ ] T030 [US6] Implementar en `frontend/js/keyboard.js` el patrón "roving
+- [X] T030 [US6] Implementar en `frontend/js/keyboard.js` el patrón "roving
       tabindex" sobre las 9 casillas del tablero: navegación con flechas de
       dirección, foco acotado dentro de los límites del tablero sin salir
       de las 9 casillas (CA-I-16, edge case de `spec.md`)
-- [ ] T031 [US6] Implementar en `frontend/js/keyboard.js` la confirmación
+- [X] T031 [US6] Implementar en `frontend/js/keyboard.js` la confirmación
       de selección/jugada con Enter o Espacio sobre la casilla enfocada, y
       verificar que los controles de Configuración y el botón de reinicio
       son operables por Tab/Enter/Espacio de forma nativa (CA-I-16)
-- [ ] T032 [US6] Refinar en `frontend/css/styles.css` la indicación visual
+- [X] T032 [US6] Refinar en `frontend/css/styles.css` la indicación visual
       de foco (`:focus-visible`) para todo control de Configuración,
       casilla del tablero y botón de reinicio (CA-I-17)
-- [ ] T033 [US6] Implementar en `frontend/js/keyboard.js` el rechazo
+- [X] T033 [US6] Implementar en `frontend/js/keyboard.js` el rechazo
       silencioso de una selección de teclado sobre el tablero cuando
       `EstadoUI.pantalla` es `"esperando_agente"` o `"terminada"`, sin
       alterar estado ni foco (CA-I-18)
-- [ ] T034 [US6] Ejecutar `pytest tests/e2e/test_ui_flows.py -k teclado` y
+- [X] T034 [US6] Ejecutar `pytest tests/e2e/test_ui_flows.py -k teclado` y
       confirmar que T029 está en verde
 
 **Checkpoint**: Interfaz completamente operable por teclado (Requisito
@@ -309,17 +309,17 @@ viewport de ~320px a 1920px (móvil, tablet, escritorio)
 
 ### Tests para US7 (escribir primero, deben fallar)
 
-- [ ] T035 [P] [US7] Test e2e en
+- [X] T035 [P] [US7] Test e2e en
       `tests/e2e/test_ui_flows.py::test_responsive_sin_scroll_horizontal`:
       en tres anchos de viewport representativos (móvil ~375px, tablet
       ~768px, escritorio ~1440px), el tablero, el marcador y los controles
       de Configuración son visibles y no aparece scroll horizontal
       (CA-I-19, CA-I-20)
-- [ ] T036 [P] [US7] Test e2e en
+- [X] T036 [P] [US7] Test e2e en
       `tests/e2e/test_ui_flows.py::test_responsive_objetivo_tactil`: en el
       ancho móvil, cada casilla del tablero mide al menos ~44x44px CSS
       (CA-I-21)
-- [ ] T037 [P] [US7] Test e2e en
+- [X] T037 [P] [US7] Test e2e en
       `tests/e2e/test_ui_flows.py::test_responsive_resize_preserva_estado`:
       con una partida en curso y foco de teclado activo, redimensionar el
       viewport SHALL preservar el tablero, turno, fase, marcador y foco
@@ -327,22 +327,22 @@ viewport de ~320px a 1920px (móvil, tablet, escritorio)
 
 ### Implementación para US7
 
-- [ ] T038 [US7] Añadir `<meta name="viewport"
+- [X] T038 [US7] Añadir `<meta name="viewport"
       content="width=device-width, initial-scale=1">` en
       `frontend/index.html` y un reset CSS base "mobile-first" en
       `frontend/css/styles.css`
-- [ ] T039 [US7] Implementar en `frontend/css/styles.css` la disposición
+- [X] T039 [US7] Implementar en `frontend/css/styles.css` la disposición
       responsive de tablero, marcador y controles de Configuración con
       Flexbox/Grid y unidades relativas, reordenando mediante media
       queries sin provocar scroll horizontal en ningún ancho del rango
       320px-1920px (CA-I-19, CA-I-20)
-- [ ] T040 [US7] Asegurar en `frontend/css/styles.css` que cada casilla del
+- [X] T040 [US7] Asegurar en `frontend/css/styles.css` que cada casilla del
       tablero mantiene un tamaño mínimo de objetivo táctil (~44x44px CSS)
       en todos los anchos soportados (CA-I-21)
-- [ ] T041 [US7] Confirmar que ningún dato de `EstadoUI` (tablero, turno,
+- [X] T041 [US7] Confirmar que ningún dato de `EstadoUI` (tablero, turno,
       fase, marcador, foco) se deriva de o se ve alterado por el tamaño de
       viewport — el layout responsive es puramente CSS (CA-I-22)
-- [ ] T042 [US7] Ejecutar `pytest tests/e2e/test_ui_flows.py -k responsive`
+- [X] T042 [US7] Ejecutar `pytest tests/e2e/test_ui_flows.py -k responsive`
       y confirmar que T035/T036/T037 están en verde
 
 **Checkpoint**: Interfaz completamente utilizable en móvil, tablet y
@@ -354,10 +354,10 @@ escritorio sin scroll horizontal ni pérdida de estado al redimensionar
 
 **Purpose**: Validación manual final transversal a todas las historias
 
-- [ ] T043 [P] Ejecutar manualmente la validación completa de
+- [X] T043 [P] Ejecutar manualmente la validación completa de
       `quickstart.md` (flujo con mouse, flujo exclusivamente por teclado, y
       diseño responsive en los tres anchos de referencia)
-- [ ] T044 [P] Revisar que ningún archivo bajo `frontend/js/` contiene
+- [X] T044 [P] Revisar que ningún archivo bajo `frontend/js/` contiene
       lógica de reglas de juego (victoria, empate, legalidad, heurística de
       agente), confirmando que toda decisión de negocio proviene de
       `api.js` (Principio II de la constitución)
