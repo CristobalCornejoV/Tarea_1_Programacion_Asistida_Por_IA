@@ -309,17 +309,17 @@ viewport de ~320px a 1920px (móvil, tablet, escritorio)
 
 ### Tests para US7 (escribir primero, deben fallar)
 
-- [ ] T035 [P] [US7] Test e2e en
+- [X] T035 [P] [US7] Test e2e en
       `tests/e2e/test_ui_flows.py::test_responsive_sin_scroll_horizontal`:
       en tres anchos de viewport representativos (móvil ~375px, tablet
       ~768px, escritorio ~1440px), el tablero, el marcador y los controles
       de Configuración son visibles y no aparece scroll horizontal
       (CA-I-19, CA-I-20)
-- [ ] T036 [P] [US7] Test e2e en
+- [X] T036 [P] [US7] Test e2e en
       `tests/e2e/test_ui_flows.py::test_responsive_objetivo_tactil`: en el
       ancho móvil, cada casilla del tablero mide al menos ~44x44px CSS
       (CA-I-21)
-- [ ] T037 [P] [US7] Test e2e en
+- [X] T037 [P] [US7] Test e2e en
       `tests/e2e/test_ui_flows.py::test_responsive_resize_preserva_estado`:
       con una partida en curso y foco de teclado activo, redimensionar el
       viewport SHALL preservar el tablero, turno, fase, marcador y foco
@@ -327,22 +327,22 @@ viewport de ~320px a 1920px (móvil, tablet, escritorio)
 
 ### Implementación para US7
 
-- [ ] T038 [US7] Añadir `<meta name="viewport"
+- [X] T038 [US7] Añadir `<meta name="viewport"
       content="width=device-width, initial-scale=1">` en
       `frontend/index.html` y un reset CSS base "mobile-first" en
       `frontend/css/styles.css`
-- [ ] T039 [US7] Implementar en `frontend/css/styles.css` la disposición
+- [X] T039 [US7] Implementar en `frontend/css/styles.css` la disposición
       responsive de tablero, marcador y controles de Configuración con
       Flexbox/Grid y unidades relativas, reordenando mediante media
       queries sin provocar scroll horizontal en ningún ancho del rango
       320px-1920px (CA-I-19, CA-I-20)
-- [ ] T040 [US7] Asegurar en `frontend/css/styles.css` que cada casilla del
+- [X] T040 [US7] Asegurar en `frontend/css/styles.css` que cada casilla del
       tablero mantiene un tamaño mínimo de objetivo táctil (~44x44px CSS)
       en todos los anchos soportados (CA-I-21)
-- [ ] T041 [US7] Confirmar que ningún dato de `EstadoUI` (tablero, turno,
+- [X] T041 [US7] Confirmar que ningún dato de `EstadoUI` (tablero, turno,
       fase, marcador, foco) se deriva de o se ve alterado por el tamaño de
       viewport — el layout responsive es puramente CSS (CA-I-22)
-- [ ] T042 [US7] Ejecutar `pytest tests/e2e/test_ui_flows.py -k responsive`
+- [X] T042 [US7] Ejecutar `pytest tests/e2e/test_ui_flows.py -k responsive`
       y confirmar que T035/T036/T037 están en verde
 
 **Checkpoint**: Interfaz completamente utilizable en móvil, tablet y

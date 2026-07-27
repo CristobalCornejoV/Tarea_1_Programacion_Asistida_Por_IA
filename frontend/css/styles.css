@@ -1,6 +1,24 @@
 /* Estilos de la interfaz del Tres en Raya.
-   Disposición responsive (CA-I-19 a CA-I-22) y estilos por pantalla se
-   añaden en las tareas de cada historia de usuario. */
+   Mobile-first: las reglas base cubren el ancho más angosto soportado
+   (~320px); la media query al final ajusta la disposición en pantallas
+   más anchas (CA-I-19, CA-I-20). */
+
+/* T038: reset base mobile-first. */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden; /* CA-I-19: nunca scroll horizontal */
+  font-family: system-ui, sans-serif;
+}
 
 /* Base de foco visible (CA-I-17): cualquier control interactivo (botones,
    inputs, casillas del tablero) hereda este contorno. */
@@ -21,4 +39,80 @@
 
 [hidden] {
   display: none;
+}
+
+/* T039: disposición responsive del marcador y de Configuración. */
+#marcador-sesion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+fieldset {
+  max-width: 100%;
+  margin-bottom: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: 0.75rem;
+}
+
+select, button, input {
+  font-size: 1rem;
+}
+
+/* T039/T040: tablero como columna de filas flexibles; cada casilla es
+   cuadrada y nunca menor al tamaño mínimo de objetivo táctil (~44x44px
+   CSS), en cualquier ancho soportado (CA-I-19 a CA-I-21). */
+#tablero {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(90vw, 360px);
+  margin: 0.5rem auto;
+}
+
+.fila-tablero {
+  display: flex;
+  gap: 4px;
+}
+
+.casilla {
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.casilla-ganadora {
+  background-color: #bbf7d0;
+}
+
+.casilla-movible {
+  outline: 2px dashed #2563eb;
+}
+
+.casilla-destino {
+  background-color: #dbeafe;
+}
+
+.casilla-seleccionada {
+  background-color: #93c5fd;
+}
+
+/* T039: en pantallas más anchas (tablet/escritorio), el tablero puede
+   crecer un poco más sin necesidad de un catálogo de breakpoints. */
+@media (min-width: 600px) {
+  #tablero {
+    width: 400px;
+  }
 }

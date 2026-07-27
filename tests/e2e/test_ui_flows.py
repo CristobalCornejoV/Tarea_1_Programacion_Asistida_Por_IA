@@ -380,3 +380,58 @@ def test_operacion_por_teclado(page, base_url):
     expect(page.locator("#btn-reiniciar")).to_be_focused()  # CA-I-17
     page.keyboard.press("Enter")
     _esperar_pantalla(page, "en_juego")
+
+
+_ANCHOS_DE_REFERENCIA = [375, 768, 1440]  # móvil, tablet, escritorio
+
+
+def _sin_scroll_horizontal(page) -> bool:
+    return page.evaluate(
+        "() => document.documentElement.scrollWidth <= window.innerWidth + 1"
+    )
+
+
+def test_responsive_sin_scroll_horizontal(page, base_url):
+    """T035: cubre CA-I-19, CA-I-20."""
+    for ancho in _ANCHOS_DE_REFERENCIA:
+        page.set_viewport_size({"width": ancho, "height": 800})
+        page.goto(base_url + "/")
+        assert _sin_scroll_horizontal(page), f"scroll horizontal en Configuración a {ancho}px"
+        expect(page.locator("#pantalla-configuracion")).to_be_visible()
+
+    for ancho in _ANCHOS_DE_REFERENCIA:
+        page.set_viewport_size({"width": ancho, "height": 800})
+        _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
+        assert _sin_scroll_horizontal(page), f"scroll horizontal en En Juego a {ancho}px"
+        expect(page.locator("#marcador-sesion")).to_be_visible()
+        expect(_celda(page, 0, 0)).to_be_visible()
+
+
+def test_responsive_objetivo_tactil(page, base_url):
+    """T036: cubre CA-I-21."""
+    page.set_viewport_size({"width": 375, "height": 800})
+    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
+
+    for fila in range(3):
+        for col in range(3):
+            caja = _celda(page, fila, col).bounding_box()
+            assert caja["width"] >= 44, f"casilla ({fila},{col}) ancho {caja['width']}px < 44px"
+            assert caja["height"] >= 44, f"casilla ({fila},{col}) alto {caja['height']}px < 44px"
+
+
+def test_responsive_resize_preserva_estado(page, base_url):
+    """T037: cubre CA-I-22."""
+    page.set_viewport_size({"width": 1440, "height": 900})
+    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
+    _jugar_casilla(page, 0, 0, "X")
+    _celda(page, 1, 1).focus()
+    expect(_celda(page, 1, 1)).to_be_focused()
+
+    page.set_viewport_size({"width": 375, "height": 800})
+
+    # El estado de la partida y el foco no cambian por redimensionar: el
+    # layout responsive es puramente CSS, EstadoUI no depende del viewport.
+    expect(_celda(page, 0, 0)).to_have_text("X")
+    expect(page.locator("#pantalla-en_juego #indicador-turno")).to_contain_text("O")
+    expect(page.locator("#marcador-victorias-x")).to_contain_text("0")
+    expect(_celda(page, 1, 1)).to_be_focused()
