@@ -259,3 +259,38 @@ def test_modalidad_continua_movimiento(page, base_url):
     _celda(page, 2, 0).click()
     expect(_celda(page, 2, 0)).to_have_text("X")
     expect(_celda(page, 0, 0)).to_have_text("")
+
+
+def test_marcador_y_reinicio(page, base_url):
+    """T025: cubre CA-I-13 a CA-I-15."""
+    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
+
+    secuencia_victoria = [(0, 0, "X"), (1, 0, "O"), (0, 1, "X"), (1, 1, "O"), (0, 2, "X")]
+    for fila, col, ficha in secuencia_victoria:
+        _jugar_casilla(page, fila, col, ficha)
+    _esperar_pantalla(page, "terminada")
+
+    # CA-I-13, CA-I-14: el marcador acumula la victoria de X.
+    expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
+    expect(page.locator("#marcador-victorias-o")).to_contain_text("0")
+    expect(page.locator("#marcador-empates")).to_contain_text("0")
+
+    # CA-I-15: reiniciar arranca una partida nueva con la misma
+    # configuración y conserva el marcador.
+    page.click("#btn-reiniciar")
+    _esperar_pantalla(page, "en_juego")
+    expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
+    expect(page.locator("#pantalla-en_juego #indicador-turno")).to_contain_text("X")
+
+    secuencia_empate = [
+        (0, 0, "X"), (0, 1, "O"), (0, 2, "X"),
+        (1, 2, "O"), (1, 0, "X"), (2, 0, "O"),
+        (1, 1, "X"), (2, 2, "O"), (2, 1, "X"),
+    ]
+    for fila, col, ficha in secuencia_empate:
+        _jugar_casilla(page, fila, col, ficha)
+    _esperar_pantalla(page, "terminada")
+
+    # El marcador acumula ambos resultados (no se reinició al reiniciar).
+    expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
+    expect(page.locator("#marcador-empates")).to_contain_text("1")

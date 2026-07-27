@@ -234,7 +234,7 @@ perderlo
 
 ### Tests para US5 (escribir primero, deben fallar)
 
-- [ ] T025 [P] [US5] Test e2e en
+- [X] T025 [P] [US5] Test e2e en
       `tests/e2e/test_ui_flows.py::test_marcador_y_reinicio`: el marcador
       se mantiene visible y acumula victorias/empates tras cada partida
       (CA-I-13, CA-I-14); "reiniciar" inicia una nueva partida con la misma
@@ -242,15 +242,15 @@ perderlo
 
 ### Implementación para US5
 
-- [ ] T026 [US5] Implementar `frontend/js/scoreboard.js`: renderiza
+- [X] T026 [US5] Implementar `frontend/js/scoreboard.js`: renderiza
       `MarcadorSesion` de forma visible en toda pantalla de juego, y lo
       incrementa exactamente una vez por cada `GameState` recibido con
       `status != "en_curso"` (CA-I-13, CA-I-14)
-- [ ] T027 [US5] Implementar en `frontend/js/scoreboard.js` el control de
+- [X] T027 [US5] Implementar en `frontend/js/scoreboard.js` el control de
       "reiniciar": repite la secuencia de creación de partida con
       `EstadoUI.configuracion` vigente sin modificar `MarcadorSesion`
       (CA-I-15)
-- [ ] T028 [US5] Ejecutar `pytest tests/e2e/test_ui_flows.py -k marcador` y
+- [X] T028 [US5] Ejecutar `pytest tests/e2e/test_ui_flows.py -k marcador` y
       confirmar que T025 está en verde
 
 **Checkpoint**: Marcador de sesión y reinicio completamente funcionales
