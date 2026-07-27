@@ -88,7 +88,7 @@ manualmente con `quickstart.md` (sección "partida clásica hasta victoria")
       (CA-M-03), rechazo fuera de turno (CA-M-04), detección de las 8
       líneas ganadoras (CA-M-05), empate por tablero lleno (CA-M-06),
       rechazo de jugada tras finalizar (CA-M-07)
-- [ ] T008 [P] [US1] Tests de contrato para `POST /api/games` (mode
+- [X] T008 [P] [US1] Tests de contrato para `POST /api/games` (mode
       "clasica"), `GET /api/games/{game_id}` y
       `POST /api/games/{game_id}/moves` en
       `backend/tests/contract/test_games_api.py` vía `TestClient`,
@@ -109,12 +109,12 @@ manualmente con `quickstart.md` (sección "partida clásica hasta victoria")
 - [X] T012 [US1] Añadir rechazo de cualquier jugada cuando
       `estado.status != "en_curso"` en `aplicar_jugada` en
       `backend/src/engine/rules.py` (CA-M-07)
-- [ ] T013 [US1] Implementar `POST /api/games` (creación con `mode:
+- [X] T013 [US1] Implementar `POST /api/games` (creación con `mode:
       "clasica"`) en `backend/src/api/games.py`, devolviendo 201 con el
       `GameState` inicial (CA-M-01)
-- [ ] T014 [US1] Implementar `GET /api/games/{game_id}` en
+- [X] T014 [US1] Implementar `GET /api/games/{game_id}` en
       `backend/src/api/games.py`, devolviendo 404 si no existe
-- [ ] T015 [US1] Implementar `POST /api/games/{game_id}/moves` en
+- [X] T015 [US1] Implementar `POST /api/games/{game_id}/moves` en
       `backend/src/api/games.py`, traduciendo excepciones de
       `aplicar_jugada` a respuestas 422 con el `ErrorJugada` correspondiente
       (CA-M-02 a CA-M-07)
