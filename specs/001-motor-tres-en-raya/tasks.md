@@ -61,7 +61,7 @@ necesitan
       fijas (3 filas, 3 columnas, 2 diagonales) en
       `backend/src/engine/win_detection.py` (usado por CA-M-05, CA-M-06,
       CA-M-13)
-- [ ] T006 Crear el almacén en memoria (`dict[str, GameState]`) y el
+- [X] T006 Crear el almacén en memoria (`dict[str, GameState]`) y el
       esqueleto de la app FastAPI en `backend/src/main.py`, montando un
       router vacío `backend/src/api/games.py` (base de infraestructura para
       todos los endpoints de US1/US2)
