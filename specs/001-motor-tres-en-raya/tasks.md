@@ -41,7 +41,7 @@ independientes.
 - [X] T002 [P] Inicializar el proyecto Python en `backend/pyproject.toml` (o
       `requirements.txt`) con dependencias `fastapi`, `uvicorn`, `pydantic`,
       `pytest`, `httpx`
-- [ ] T003 [P] Configurar `pytest.ini` (o sección `[tool.pytest.ini_options]`)
+- [X] T003 [P] Configurar `pytest.ini` (o sección `[tool.pytest.ini_options]`)
       apuntando a `backend/tests/` como raíz de descubrimiento de pruebas
 
 ---
