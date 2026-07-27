@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-26
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: User description: "Motor del juego tres en raya. Tablero de 3x3; X y O alternan turnos y X inicia. Reglas de victoria: Gana quien alinea tres fichas propias en fila, columna o diagonal. Modalidad clásica: se coloca una ficha por turno en casilla vacía; empate al llenarse el tablero sin ganador. Modalidad continua: cada jugador tiene exactamente 3 fichas. Primero fase de colocación en casillas vacías. Luego fase de movimiento, donde un jugador mueve una ficha propia a cualquier casilla vacía. Excluir: sin interfaz ni agentes en esta spec."
 
@@ -120,13 +120,11 @@ Estas ambigüedades fueron identificadas durante el análisis de la
 especificación y resueltas por decisión explícita del equipo antes de cerrar
 esta spec (ver CA-M-11 y CA-M-14 arriba):
 
-- **[NEEDS CLARIFICATION: ¿En modalidad continua, una ficha puede moverse a
-  cualquier casilla vacía o solo a casillas adyacentes?]** — **RESUELTO**: una
+- **Decisión resuelta: movimiento en modalidad continua.** Una
   ficha puede moverse a cualquier casilla vacía del tablero, sin restricción
   de adyacencia. Decisión tomada para simplificar el flujo del motor y de las
   reglas que deberán validar los agentes en tareas futuras.
-- **[NEEDS CLARIFICATION: ¿Qué ocurre si una posición del tablero se repite
-  indefinidamente durante la fase de movimiento?]** — **RESUELTO**: si la
+- **Decisión resuelta: repetición indefinida.** Si la
   misma posición exacta del tablero se repite 3 veces a lo largo de la fase
   de movimiento, el sistema declara la partida empatada, para evitar bucles
   infinitos entre los dos jugadores.

@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-26
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: User description: "Interfaz gráfica del juego tres en raya. Estados de la UI: Configuración, En juego, Esperando agente, Terminada. Requisitos: configuración de modo/nivel/fichas/modalidad; indicar turno y ficha; resaltar línea ganadora y bloquear tablero; rechazar jugada ilegal con aviso visual; mostrar espera del agente y deshabilitar tablero; en modalidad continua señalar fichas movibles y casillas destino; marcador de sesión y botón de reinicio conservando marcador; operación completa por teclado (Requisito Excelente)."
 

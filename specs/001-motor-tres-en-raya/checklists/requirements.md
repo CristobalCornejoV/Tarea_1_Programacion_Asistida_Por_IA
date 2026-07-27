@@ -13,9 +13,8 @@
 
 ## Requirement Completeness
 
-- [x] No [NEEDS CLARIFICATION] markers remain (the two markers present are
-      historical records explicitly required by the user, each immediately
-      followed by **RESUELTO** and a final decision — none are open)
+- [x] No unresolved clarification markers remain; ambas decisiones se registran
+      como resueltas en la especificación
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -33,7 +32,5 @@
 
 ## Notes
 
-- All items pass. The two `[NEEDS CLARIFICATION: ...]` markers under
-  "Resolved Clarifications" are intentional, per explicit user instruction to
-  document the resolved ambiguities in that format; both are resolved inline
-  with a final decision and do not block `/speckit-clarify` or `/speckit-plan`.
+- All items pass. Las dos ambigüedades originales quedaron registradas como
+  decisiones resueltas y no bloquean `/speckit-clarify` ni `/speckit-plan`.

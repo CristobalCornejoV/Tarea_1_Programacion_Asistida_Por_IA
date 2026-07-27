@@ -5,6 +5,8 @@ venv/
 dist/
 *.egg-info/
 .pytest_cache/
+.coverage
+debug.log
 .DS_Store
 Thumbs.db
 *.tmp
