@@ -334,3 +334,17 @@ Task: "Test estadístico obligatorio CA-A-07 en backend/tests/integration/test_s
 3. US2 (Agente Medio) → añade heurística sin romper Sencillo
 4. US3 (Agente Complejo) → añade juego óptimo y valida CA-A-07 contra US1
 5. Polish → rendimiento y casos límite transversales
+
+---
+
+## Phase 7: Cierre crítico de entrega
+
+- [X] T029 [P] Añadir pruebas de contrato para CA-A-10, rechazo de partidas
+      finalizadas con casillas libres y rendimiento de los tres niveles en
+      modalidad continua en `backend/tests/contract/test_agents_api.py`
+- [X] T030 Implementar estrategia acotada del agente Complejo en modalidad
+      continua y aislar la caché por modalidad/fase en
+      `backend/src/agents/complex.py` (CA-A-10, SC-004)
+- [X] T031 Ampliar `SolicitudJugadaAgente` con el estado de la partida y
+      detectar líneas ganadoras en el backend para rechazar solicitudes
+      finalizadas en `backend/src/api/agents.py` (FR-007)

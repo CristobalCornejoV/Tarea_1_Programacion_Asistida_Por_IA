@@ -1,5 +1,5 @@
-"""Agente Complejo: juego óptimo vía negamax con poda alfa-beta (CA-A-07,
-CA-A-08), con memoria persistente entre partidas (CA-A-09).
+"""Agente Complejo: juego óptimo clásico vía negamax (CA-A-07/CA-A-08),
+memoria persistente (CA-A-09) y táctica acotada en continua (CA-A-10).
 
 Garantía de optimalidad acotada a modalidad clásica (ver
 `research.md` Decisión 4): el árbol de búsqueda de tres en raya clásico es
@@ -9,7 +9,12 @@ cero resuelve muy por debajo de 1 segundo incluso sin memoización.
 
 from typing import Optional
 
-from backend.src.agents.shared import listar_jugadas_legales, simular_jugada
+from backend.src.agents.shared import (
+    detectar_jugada_ganadora,
+    listar_jugadas_legales,
+    otro_jugador,
+    simular_jugada,
+)
 from backend.src.models.game_state import GameState, Jugada
 
 # Caché de memoización: clave canónica -> (valor, mejor_jugada). Solo se
@@ -24,9 +29,9 @@ _memo: dict[str, tuple[int, Optional[Jugada]]] = {}
 
 
 def _clave_canonica(estado: GameState) -> str:
-    """Representación canónica de (board, turn) usada como clave de caché (CA-A-09)."""
+    """Clave aislada por modalidad, fase, tablero y turno (CA-A-09)."""
     tablero = "".join(casilla or "_" for fila in estado.board for casilla in fila)
-    return f"{tablero}:{estado.turn}"
+    return f"{estado.mode}:{estado.phase or '-'}:{tablero}:{estado.turn}"
 
 
 def _valor_terminal_para_estado_raiz(estado: GameState) -> Optional[int]:
@@ -102,8 +107,42 @@ def _negamax(estado: GameState, alpha: int, beta: int) -> tuple[Optional[Jugada]
     return mejor_jugada, mejor_valor
 
 
+def _prioridad_continua(jugada: Jugada) -> tuple[int, int, int, int, int]:
+    """Orden estable: centro, esquinas y bordes; luego origen/destino."""
+    destino = (jugada.to.row, jugada.to.col)
+    if destino == (1, 1):
+        grupo = 0
+    elif destino in {(0, 0), (0, 2), (2, 0), (2, 2)}:
+        grupo = 1
+    else:
+        grupo = 2
+    origen = (
+        (jugada.from_.row, jugada.from_.col)
+        if jugada.from_ is not None
+        else (-1, -1)
+    )
+    return (grupo, jugada.to.row, jugada.to.col, origen[0], origen[1])
+
+
+def _decidir_jugada_continua(estado: GameState) -> Jugada:
+    """Táctica acotada y determinista para evitar ciclos de búsqueda."""
+    victoria = detectar_jugada_ganadora(estado, estado.turn)
+    if victoria is not None:
+        return victoria
+
+    legales = listar_jugadas_legales(estado)
+    amenaza = detectar_jugada_ganadora(estado, otro_jugador(estado.turn))
+    if amenaza is not None:
+        bloqueos = [jugada for jugada in legales if jugada.to == amenaza.to]
+        if bloqueos:
+            return min(bloqueos, key=_prioridad_continua)
+
+    return min(legales, key=_prioridad_continua)
+
+
 def decidir_jugada(estado: GameState) -> Jugada:
-    """Jugada óptima para `estado.turn`: victoria forzada si existe, empate en
-    caso contrario (CA-A-08), nunca una derrota evitable (CA-A-07)."""
+    """Óptima en clásica y legal/acotada en continua."""
+    if estado.mode == "continua":
+        return _decidir_jugada_continua(estado)
     jugada, _ = _negamax(estado, -2, 2)
     return jugada

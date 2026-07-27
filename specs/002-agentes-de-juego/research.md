@@ -41,7 +41,8 @@
 
 - **Decision**: Un diccionario en memoria de proceso
   `memo: dict[str, ResultadoEvaluado]`, con clave la representación canónica
-  del tablero + turno, poblado incrementalmente por cada llamada a minimax y
+  de modalidad + fase + tablero + turno, poblado incrementalmente por cada
+  llamada a minimax clásico y
   reutilizado en llamadas futuras (incluso de partidas distintas) mientras el
   proceso backend siga vivo.
 - **Rationale**: Cumple literalmente CA-A-09 ("memoria persistente entre
@@ -58,19 +59,17 @@
 ## Decisión 4: Modalidad continua y el agente Complejo
 
 - **Decision**: Las garantías de optimalidad (CA-A-07, CA-A-08, SC-002,
-  SC-005) se acotan explícitamente a la modalidad clásica, tal como ya
-  documentan las Assumptions de `spec.md`. En modalidad continua, el agente
-  Complejo reutiliza el mismo mecanismo de minimax con poda, pero sin
-  garantía formal de invencibilidad (el espacio de estados con fase de
-  movimiento y repetición de posiciones es más complejo y no forma parte del
-  criterio estadístico obligatorio).
+  SC-005) se acotan explícitamente a la modalidad clásica. En modalidad
+  continua, el agente Complejo usa una estrategia táctica acotada:
+  victoria inmediata, bloqueo inmediato y luego una jugada legal
+  determinista con prioridad centro > esquinas > bordes. No ejecuta minimax
+  sobre la fase de movimiento, cuyo espacio contiene ciclos.
 - **Rationale**: Evita prometer una garantía no solicitada ni verificada por
-  la especificación; mantiene el alcance de esta fase de diseño ceñido a lo
-  que CA-A-07 realmente exige.
+  la especificación y garantiza CA-A-10/SC-004: una jugada legal en menos de
+  1 segundo para una modalidad ofrecida por la interfaz.
 - **Alternatives considered**: Extender minimax a modalidad continua con
   profundidad acotada y detección de ciclos para garantizar también
-  invencibilidad ahí — de mayor complejidad y no requerido por ningún CA-A-*;
-  queda como posible mejora futura fuera de esta spec.
+  invencibilidad ahí — de mayor complejidad y no requerido por CA-A-08.
 
 ## Decisión 5: Endpoint de agentes independiente del motor
 

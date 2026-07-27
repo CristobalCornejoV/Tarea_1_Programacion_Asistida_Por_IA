@@ -9,9 +9,8 @@
 
 ## Entidad: `SolicitudJugadaAgente` (request)
 
-Subconjunto de `GameState` estrictamente necesario para decidir una jugada
-(sin `game_id`, `status`, `winner` ni `winning_line`, que son irrelevantes
-para la decisión del agente y solo tienen sentido en el motor):
+Subconjunto de `GameState` necesario para decidir o rechazar una solicitud
+(sin `game_id`, `winner` ni `winning_line`):
 
 | Campo | Tipo | Descripción |
 |---|---|---|
@@ -20,10 +19,11 @@ para la decisión del agente y solo tienen sentido en el motor):
 | `phase` | `"colocacion"` \| `"movimiento"` \| `null` | Solo relevante si `mode = "continua"` |
 | `turn` | `"X"` \| `"O"` | Jugador para el que se solicita la jugada |
 | `fichas_disponibles` | `{ "X": int, "O": int }` \| `null` | Igual que en `GameState`; `null` fuera de fase de colocación |
+| `status` | `"en_curso"` \| `"victoria"` \| `"empate"` | Permite rechazar una partida finalizada; por compatibilidad su valor por defecto es `"en_curso"` |
 
-**Precondición**: la solicitud SHALL corresponder a una partida no
-finalizada y con al menos una jugada legal disponible; en caso contrario el
-endpoint responde con error (ver `contracts/agents-api.md`).
+El endpoint verifica además la existencia de una línea ganadora directamente
+en `board`, por lo que no depende únicamente de que el cliente envíe un
+`status` correcto.
 
 ## Entidad: `Jugada` (response)
 
@@ -52,7 +52,7 @@ implementación del agente Complejo:
 
 | Campo | Tipo | Descripción |
 |---|---|---|
-| clave | `string` | Representación canónica de `(board, turn)` |
+| clave | `string` | Representación canónica de `(mode, phase, board, turn)` |
 | valor | `{ "mejor_jugada": Jugada, "valor_minimax": int }` | Resultado ya evaluado, reutilizado en llamadas futuras (CA-A-09) |
 
 Esta caché vive en memoria del proceso backend y se comparte entre todas las

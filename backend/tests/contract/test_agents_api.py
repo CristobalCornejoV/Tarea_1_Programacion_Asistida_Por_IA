@@ -1,7 +1,8 @@
 """Tests de contrato HTTP de la API de agentes: Sencillo (T006, CA-A-01,
 CA-A-02), Medio (T011, CA-A-03 a CA-A-06), Complejo (T018, CA-A-08),
 rechazo sin jugadas legales (T027, edge case de spec.md) y tiempo de
-respuesta (T026, SC-004, Principio VI de la constitución).
+respuesta (T026, SC-004, Principio VI de la constitución). T029 cubre
+CA-A-10 y la regresión de partidas finalizadas con casillas libres.
 
 Ver `contracts/agents-api.md`.
 """
@@ -17,6 +18,21 @@ client = TestClient(app)
 
 def _es_casilla_valida(row: int, col: int) -> bool:
     return 0 <= row <= 2 and 0 <= col <= 2
+
+
+def _estado_continuo_en_movimiento() -> dict:
+    return {
+        "board": [
+            ["X", "O", "X"],
+            ["O", "X", "O"],
+            [None, None, None],
+        ],
+        "mode": "continua",
+        "phase": "movimiento",
+        "turn": "X",
+        "fichas_disponibles": None,
+        "status": "en_curso",
+    }
 
 
 def test_post_agents_sencillo_move_devuelve_jugada_legal_en_tablero_vacio():
@@ -134,6 +150,34 @@ def test_post_agents_complejo_move_juega_victoria_inmediata():  # CA-A-08
     assert resp.json()["to"] == {"row": 0, "col": 2}
 
 
+def test_post_agents_complejo_continua_devuelve_movimiento_legal_tras_usar_cache_clasica():
+    """CA-A-10: la caché clásica no contamina una partida continua."""
+    board = _estado_continuo_en_movimiento()["board"]
+    clasica = {
+        "board": board,
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+        "status": "en_curso",
+    }
+    assert client.post("/api/agents/complejo/move", json=clasica).status_code == 200
+
+    resp = client.post(
+        "/api/agents/complejo/move",
+        json=_estado_continuo_en_movimiento(),
+    )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["type"] == "mover"
+    assert data["from"] is not None
+    origen = data["from"]
+    destino = data["to"]
+    assert board[origen["row"]][origen["col"]] == "X"
+    assert board[destino["row"]][destino["col"]] is None
+
+
 def test_post_agents_move_rechaza_sin_jugadas_legales_tablero_lleno():  # T027
     body = {
         "board": [["X", "O", "X"], ["X", "O", "O"], ["O", "X", "X"]],
@@ -147,17 +191,39 @@ def test_post_agents_move_rechaza_sin_jugadas_legales_tablero_lleno():  # T027
         assert resp.status_code == 422
 
 
-def test_post_agents_move_responde_en_menos_de_1_segundo_tiempo():  # T026, SC-004
+def test_post_agents_move_rechaza_partida_ganada_con_casillas_libres():  # T029
     body = {
-        "board": [[None, None, None], [None, None, None], [None, None, None]],
+        "board": [["X", "X", "X"], ["O", "O", None], [None, None, None]],
         "mode": "clasica",
         "phase": None,
-        "turn": "X",
+        "turn": "O",
         "fichas_disponibles": None,
+        # Se omite status intencionalmente: el backend debe reconocer la
+        # línea ganadora y no confiar solo en el cliente.
     }
     for nivel in ("sencillo", "medio", "complejo"):
-        inicio = time.perf_counter()
         resp = client.post(f"/api/agents/{nivel}/move", json=body)
-        duracion = time.perf_counter() - inicio
-        assert resp.status_code == 200
-        assert duracion < 1.0, f"{nivel} tardó {duracion:.3f}s (límite: 1s)"
+        assert resp.status_code == 422
+
+
+def test_post_agents_move_responde_en_menos_de_1_segundo_tiempo():  # T026, SC-004
+    estados = [
+        {
+            "board": [[None, None, None], [None, None, None], [None, None, None]],
+            "mode": "clasica",
+            "phase": None,
+            "turn": "X",
+            "fichas_disponibles": None,
+            "status": "en_curso",
+        },
+        _estado_continuo_en_movimiento(),
+    ]
+    for body in estados:
+        for nivel in ("sencillo", "medio", "complejo"):
+            inicio = time.perf_counter()
+            resp = client.post(f"/api/agents/{nivel}/move", json=body)
+            duracion = time.perf_counter() - inicio
+            assert resp.status_code == 200
+            assert duracion < 1.0, (
+                f"{nivel}/{body['mode']} tardó {duracion:.3f}s (límite: 1s)"
+            )

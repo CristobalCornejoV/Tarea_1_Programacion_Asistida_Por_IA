@@ -239,7 +239,9 @@ def test_espera_agente(page: Page, live_server_url: str) -> None:
         "phase",
         "turn",
         "fichas_disponibles",
+        "status",
     }
+    assert agent_request["status"] == "en_curso"
     _fulfill_json(
         pending_agent_routes.pop(),
         {"type": "colocar", "to": {"row": 1, "col": 1}},

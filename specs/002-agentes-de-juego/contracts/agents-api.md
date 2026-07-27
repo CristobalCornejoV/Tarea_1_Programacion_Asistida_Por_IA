@@ -14,7 +14,8 @@
   "mode": "clasica",
   "phase": null,
   "turn": "X",
-  "fichas_disponibles": null
+  "fichas_disponibles": null,
+  "status": "en_curso"
 }
 ```
 
@@ -34,7 +35,8 @@ En modalidad continua, fase de movimiento:
 
 - `404` si `{level}` no es uno de los tres niveles soportados.
 - `422` si el `board` no tiene jugadas legales disponibles (tablero lleno) o
-  la combinación `mode`/`phase`/`fichas_disponibles` es inconsistente.
+  la partida está finalizada. El backend también detecta una línea ganadora
+  aunque el cliente omita o envíe incorrectamente `status`.
 
 ## Semántica por nivel
 
@@ -42,7 +44,7 @@ En modalidad continua, fase de movimiento:
 |---|---|
 | `sencillo` | Selección aleatoria uniforme entre jugadas legales (CA-A-01, CA-A-02) |
 | `medio` | Ganar si puede (CA-A-03) → bloquear si el rival puede ganar (CA-A-04) → azar (CA-A-05) |
-| `complejo` | Jugada óptima vía minimax con poda alfa-beta en modalidad clásica; nunca permite una derrota evitable (CA-A-07, CA-A-08); reutiliza memoria persistente entre partidas (CA-A-09) |
+| `complejo` | Minimax óptimo en clásica (CA-A-07, CA-A-08), memoria persistente (CA-A-09) y estrategia táctica acotada y legal en continua (CA-A-10) |
 
 ## Trazabilidad con criterios de aceptación
 
@@ -50,5 +52,5 @@ En modalidad continua, fase de movimiento:
 |---|---|
 | `POST /api/agents/sencillo/move` | CA-A-01, CA-A-02 |
 | `POST /api/agents/medio/move` | CA-A-03, CA-A-04, CA-A-05, CA-A-06 |
-| `POST /api/agents/complejo/move` | CA-A-07, CA-A-08, CA-A-09 |
+| `POST /api/agents/complejo/move` | CA-A-07, CA-A-08, CA-A-09, CA-A-10 |
 | Todo el endpoint (tiempo de respuesta) | SC-004 |

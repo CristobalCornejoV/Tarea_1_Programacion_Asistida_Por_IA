@@ -198,6 +198,7 @@ function solicitudParaAgente(gameState) {
     phase: gameState.phase,
     turn: gameState.turn,
     fichas_disponibles: gameState.fichas_disponibles,
+    status: gameState.status,
   };
 }
 

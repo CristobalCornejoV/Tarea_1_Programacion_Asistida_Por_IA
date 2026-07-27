@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-26
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: User description: "Agentes de juego. Existen 3 niveles distinguibles: Sencillo (jugada legal al azar, sin memoria), Medio (memoria de la partida en curso, heurística ganar/bloquear/azar), Complejo (juego óptimo, nunca pierde en modalidad clásica, memoria persistente entre partidas). Incluir criterio estadístico CA-A-07: Sencillo vs Complejo, 100 partidas, el Complejo no pierde ninguna. Sin detalles de motor ni de interfaz."
 
@@ -107,6 +107,11 @@ Complejo no pierde ninguna (CA-A-07).
   encontrada, y CUANDO una posición ya evaluada vuelve a presentarse en una
   partida posterior, EL agente SHALL reutilizar el resultado memorizado en
   lugar de recalcularlo.
+- **CA-A-10**: CUANDO el agente Complejo debe jugar en modalidad continua,
+  tanto en fase de colocación como de movimiento, EL agente SHALL devolver
+  una jugada legal en menos de 1 segundo mediante una estrategia táctica
+  acotada; la garantía de juego óptimo de CA-A-08 permanece limitada a la
+  modalidad clásica.
 
 ---
 
@@ -158,6 +163,10 @@ Complejo no pierde ninguna (CA-A-07).
   cualquier nivel (incluyendo el mismo nivel contra sí mismo) durante una
   serie de partidas completas, para fines de validación estadística
   (CA-A-07).
+- **FR-009**: En modalidad continua, el agente Complejo MUST utilizar una
+  estrategia acotada que priorice victoria inmediata, bloqueo y una jugada
+  legal determinista, sin ejecutar una búsqueda potencialmente cíclica del
+  árbol completo de movimientos.
 
 ### Key Entities
 
@@ -199,7 +208,8 @@ Complejo no pierde ninguna (CA-A-07).
 - El criterio estadístico CA-A-07 y el éxito SC-002 se evalúan sobre la
   modalidad clásica, dado que es la modalidad para la que el agente Complejo
   garantiza juego óptimo sin derrota; el comportamiento del agente Complejo en
-  modalidad continua no se define en esta especificación.
+  modalidad continua garantiza legalidad y tiempo de respuesta, pero no
+  optimalidad ni invencibilidad (CA-A-10).
 - La "memoria persistente entre partidas" del agente Complejo (CA-A-09,
   FR-006) se limita a resultados de evaluación de posiciones de tablero; no
   implica ningún requisito de almacenamiento, formato o tecnología, que queda

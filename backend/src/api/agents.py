@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from backend.src.agents import complex as complex_agent
 from backend.src.agents import medium, simple
 from backend.src.agents.shared import SinJugadasLegales, asegurar_jugada_disponible
+from backend.src.engine.win_detection import comprobar_victoria
 from backend.src.models.game_state import Casilla, Coordenada, Ficha, GameState, Jugada
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
@@ -26,6 +27,7 @@ class SolicitudJugadaAgente(BaseModel):
     phase: Optional[Literal["colocacion", "movimiento"]] = None
     turn: Ficha
     fichas_disponibles: Optional[dict[Ficha, int]] = None
+    status: Literal["en_curso", "victoria", "empate"] = "en_curso"
 
 
 class JugadaAgenteResponse(BaseModel):
@@ -43,6 +45,13 @@ class JugadaAgenteResponse(BaseModel):
 
 
 def _estado_desde_solicitud(solicitud: SolicitudJugadaAgente) -> GameState:
+    linea_ganadora = comprobar_victoria(solicitud.board)
+    status = "victoria" if linea_ganadora is not None else solicitud.status
+    winner = (
+        solicitud.board[linea_ganadora[0].row][linea_ganadora[0].col]
+        if linea_ganadora is not None
+        else None
+    )
     return GameState(
         game_id="",
         mode=solicitud.mode,
@@ -50,7 +59,9 @@ def _estado_desde_solicitud(solicitud: SolicitudJugadaAgente) -> GameState:
         turn=solicitud.turn,
         phase=solicitud.phase,
         fichas_disponibles=solicitud.fichas_disponibles,
-        status="en_curso",
+        status=status,
+        winner=winner,
+        winning_line=linea_ganadora,
     )
 
 
