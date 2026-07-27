@@ -38,7 +38,7 @@ independientes.
 - [X] T001 Crear la estructura de directorios `backend/src/{models,engine,api}`,
       `backend/tests/{unit,contract}` y `frontend/{css,js}` según
       `plan.md` → Project Structure
-- [ ] T002 [P] Inicializar el proyecto Python en `backend/pyproject.toml` (o
+- [X] T002 [P] Inicializar el proyecto Python en `backend/pyproject.toml` (o
       `requirements.txt`) con dependencias `fastapi`, `uvicorn`, `pydantic`,
       `pytest`, `httpx`
 - [ ] T003 [P] Configurar `pytest.ini` (o sección `[tool.pytest.ini_options]`)

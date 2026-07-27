@@ -1,0 +1,19 @@
+[project]
+name = "tres-en-raya-backend"
+version = "0.1.0"
+description = "Motor, agentes y API del juego tres en raya (Tarea 1, curso SDD)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "httpx",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
