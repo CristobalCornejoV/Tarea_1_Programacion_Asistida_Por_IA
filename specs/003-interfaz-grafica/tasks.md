@@ -129,7 +129,7 @@ resaltados y bloqueo del tablero, recibir aviso ante jugada ilegal
 
 ### Tests para US2 (escribir primero, deben fallar)
 
-- [ ] T012 [P] [US2] Test e2e en `tests/e2e/test_ui_flows.py::test_jugar_partida`:
+- [X] T012 [P] [US2] Test e2e en `tests/e2e/test_ui_flows.py::test_jugar_partida`:
       se indica turno y ficha durante la partida (CA-I-05); al ganar se
       resalta la línea ganadora y se bloquea el tablero (CA-I-06); al
       empatar se indica el empate y se bloquea el tablero (CA-I-07); una
@@ -137,18 +137,18 @@ resaltados y bloqueo del tablero, recibir aviso ante jugada ilegal
 
 ### Implementación para US2
 
-- [ ] T013 [US2] Implementar `frontend/js/board.js`: renderiza el tablero
+- [X] T013 [US2] Implementar `frontend/js/board.js`: renderiza el tablero
       3x3 a partir de `game_state.board` e indica de quién es el turno y
       su ficha a partir de `game_state.turn` (CA-I-05)
-- [ ] T014 [US2] Implementar en `frontend/js/board.js` el resaltado de
+- [X] T014 [US2] Implementar en `frontend/js/board.js` el resaltado de
       `game_state.winning_line` y el bloqueo de interacción cuando
       `game_state.status != "en_curso"` (CA-I-06, CA-I-07)
-- [ ] T015 [US2] Implementar en `frontend/js/game-screen.js` el manejador de
+- [X] T015 [US2] Implementar en `frontend/js/game-screen.js` el manejador de
       clic sobre una casilla: construye la `Jugada` y llama
       `api.aplicarJugada`; en `200 OK` actualiza `EstadoUI.game_state`; en
       `422` muestra el aviso visual de error usando el campo `error` de la
       respuesta sin modificar `EstadoUI.game_state` (CA-I-08)
-- [ ] T016 [US2] Ejecutar `pytest tests/e2e/test_ui_flows.py -k partida` y
+- [X] T016 [US2] Ejecutar `pytest tests/e2e/test_ui_flows.py -k partida` y
       confirmar que T012 está en verde
 
 **Checkpoint**: Ciclo completo de partida (clásica, contra otro humano)
@@ -165,7 +165,7 @@ el tablero mientras tanto
 
 ### Tests para US3 (escribir primero, deben fallar)
 
-- [ ] T017 [P] [US3] Test e2e en
+- [X] T017 [P] [US3] Test e2e en
       `tests/e2e/test_ui_flows.py::test_espera_agente`: al llegar el turno
       de un agente se muestra la indicación de espera y se deshabilita el
       tablero (CA-I-09); al recibir la jugada del agente se oculta la
@@ -174,16 +174,16 @@ el tablero mientras tanto
 
 ### Implementación para US3
 
-- [ ] T018 [US3] Implementar en `frontend/js/game-screen.js` la detección
+- [X] T018 [US3] Implementar en `frontend/js/game-screen.js` la detección
       de turno de agente (a partir de `game_state.turn` y
       `EstadoUI.configuracion`), transicionando `EstadoUI.pantalla` a
       `"esperando_agente"` y deshabilitando el tablero (CA-I-09)
-- [ ] T019 [US3] Implementar en `frontend/js/game-screen.js` la llamada a
+- [X] T019 [US3] Implementar en `frontend/js/game-screen.js` la llamada a
       `api.obtenerJugadaAgente(nivel, subconjuntoEstado)` seguida de
       `api.aplicarJugada` con la jugada recibida, ocultando la indicación
       de espera y retornando a `"en_juego"` o `"terminada"` según la
       respuesta (CA-I-10)
-- [ ] T020 [US3] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
+- [X] T020 [US3] Ejecutar `pytest tests/e2e/test_ui_flows.py -k
       espera_agente` y confirmar que T017 está en verde
 
 **Checkpoint**: Partidas Humano vs Agente completamente jugables con

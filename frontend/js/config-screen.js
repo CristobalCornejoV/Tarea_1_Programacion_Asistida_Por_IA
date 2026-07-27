@@ -1,10 +1,10 @@
 // Pantalla de Configuración (CA-I-01 a CA-I-04).
 import { crearPartida } from "./api.js";
+import { manejarNuevoEstado } from "./game-screen.js";
 import {
   EstadoUI,
   configuracionEstaCompleta,
   crearConfiguracionVacia,
-  mostrarPantalla,
 } from "./state.js";
 
 const contenedor = document.getElementById("pantalla-configuracion");
@@ -105,8 +105,7 @@ async function iniciarPartida() {
     errorEl.textContent = "No se pudo crear la partida. Intenta de nuevo.";
     return;
   }
-  EstadoUI.game_state = resultado.body;
-  mostrarPantalla("en_juego");
+  manejarNuevoEstado(resultado.body); // decide en_juego / esperando_agente
 }
 
 inicializar();
