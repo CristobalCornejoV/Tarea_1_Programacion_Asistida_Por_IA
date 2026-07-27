@@ -294,3 +294,89 @@ def test_marcador_y_reinicio(page, base_url):
     # El marcador acumula ambos resultados (no se reinició al reiniciar).
     expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
     expect(page.locator("#marcador-empates")).to_contain_text("1")
+
+
+def test_operacion_por_teclado(page, base_url):
+    """T029: cubre CA-I-16 a CA-I-18 (Requisito Excelente).
+
+    Configuración se opera enfocando cada control y activándolo con
+    Espacio/Enter (los radios/botones nativos ya son accesibles por
+    teclado, ver research.md Decisión 2); la navegación por el tablero
+    usa flechas + Enter/Espacio, que sí es lógica propia (keyboard.js).
+    """
+    page.goto(base_url + "/")
+
+    page.locator('input[name="modo"][value="humano_vs_humano"]').focus()
+    page.keyboard.press(" ")
+    page.locator('input[name="ficha_jugador_1"][value="X"]').focus()
+    page.keyboard.press(" ")
+    page.locator('input[name="modalidad"][value="clasica"]').focus()
+    page.keyboard.press(" ")
+
+    page.locator("#btn-iniciar").focus()
+    expect(page.locator("#btn-iniciar")).to_be_focused()  # CA-I-17
+    page.keyboard.press("Enter")
+    page.wait_for_function(
+        "() => document.getElementById('pantalla-configuracion').hidden === true"
+    )
+
+    # X: enfocar (0,0) directamente y confirmar con Enter.
+    _celda(page, 0, 0).focus()
+    expect(_celda(page, 0, 0)).to_be_focused()  # CA-I-17
+    page.keyboard.press("Enter")
+    expect(_celda(page, 0, 0)).to_have_text("X")
+
+    # El foco se conserva tras redibujar el tablero (mismo elemento lógico).
+    expect(_celda(page, 0, 0)).to_be_focused()
+
+    # O: mover el foco con flechas hasta (1,0) y confirmar con Espacio.
+    page.keyboard.press("ArrowDown")
+    expect(_celda(page, 1, 0)).to_be_focused()
+    page.keyboard.press(" ")
+    expect(_celda(page, 1, 0)).to_have_text("O")
+
+    # X: flechas hasta (0,1) y Enter.
+    page.keyboard.press("ArrowUp")
+    page.keyboard.press("ArrowRight")
+    expect(_celda(page, 0, 1)).to_be_focused()
+    page.keyboard.press("Enter")
+    expect(_celda(page, 0, 1)).to_have_text("X")
+
+    # O: flechas hasta (1,1) y Espacio.
+    page.keyboard.press("ArrowDown")
+    expect(_celda(page, 1, 1)).to_be_focused()
+    page.keyboard.press(" ")
+    expect(_celda(page, 1, 1)).to_have_text("O")
+
+    # X: flechas hasta (0,2) y Enter -> completa la fila superior, gana X.
+    page.keyboard.press("ArrowUp")
+    page.keyboard.press("ArrowRight")
+    expect(_celda(page, 0, 2)).to_be_focused()
+    page.keyboard.press("Enter")
+    _esperar_pantalla(page, "terminada")
+    expect(page.locator("#pantalla-terminada #resultado-partida")).to_contain_text("X")
+
+    # CA-I-18: una entrada de teclado sobre una casilla deshabilitada
+    # (tablero ya terminado) se ignora sin alterar el tablero. Se dispara
+    # el evento directamente sobre el elemento (en vez de confiar en que
+    # el navegador impida enfocar un <button disabled>) para probar de
+    # forma precisa la guarda de keyboard.js, no solo el comportamiento
+    # nativo del navegador.
+    resultado = page.evaluate(
+        """() => {
+            const celda = document.querySelector(
+                '.casilla[data-row="0"][data-col="0"]:not([hidden])'
+            );
+            const antes = celda.textContent;
+            const evento = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+            celda.dispatchEvent(evento);
+            return { antes, despues: celda.textContent };
+        }"""
+    )
+    assert resultado["antes"] == resultado["despues"]
+
+    # Reiniciar también es operable por teclado (botón nativo).
+    page.locator("#btn-reiniciar").focus()
+    expect(page.locator("#btn-reiniciar")).to_be_focused()  # CA-I-17
+    page.keyboard.press("Enter")
+    _esperar_pantalla(page, "en_juego")

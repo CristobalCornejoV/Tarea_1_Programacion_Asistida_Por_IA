@@ -2,11 +2,21 @@
    Disposición responsive (CA-I-19 a CA-I-22) y estilos por pantalla se
    añaden en las tareas de cada historia de usuario. */
 
-/* Base de foco visible (CA-I-17), refinada en US6 (T032). Se aplica a
-   cualquier control interactivo: botones, inputs, casillas del tablero. */
+/* Base de foco visible (CA-I-17): cualquier control interactivo (botones,
+   inputs, casillas del tablero) hereda este contorno. */
 :focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
+}
+
+/* T032: refuerzo específico sobre las casillas del tablero, cuyo propio
+   fondo/borde de <button> puede competir visualmente con el outline
+   genérico de arriba. */
+.casilla:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: -2px;
+  z-index: 1;
+  position: relative;
 }
 
 [hidden] {

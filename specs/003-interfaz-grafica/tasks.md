@@ -266,7 +266,7 @@ exclusivamente el teclado
 
 ### Tests para US6 (escribir primero, deben fallar)
 
-- [ ] T029 [P] [US6] Test e2e en
+- [X] T029 [P] [US6] Test e2e en
       `tests/e2e/test_ui_flows.py::test_operacion_por_teclado`: completa,
       solo con teclado, el flujo de Configuración → partida completa
       (incluyendo una jugada rechazada por ilegal) → reinicio, verificando
@@ -276,22 +276,22 @@ exclusivamente el teclado
 
 ### Implementación para US6
 
-- [ ] T030 [US6] Implementar en `frontend/js/keyboard.js` el patrón "roving
+- [X] T030 [US6] Implementar en `frontend/js/keyboard.js` el patrón "roving
       tabindex" sobre las 9 casillas del tablero: navegación con flechas de
       dirección, foco acotado dentro de los límites del tablero sin salir
       de las 9 casillas (CA-I-16, edge case de `spec.md`)
-- [ ] T031 [US6] Implementar en `frontend/js/keyboard.js` la confirmación
+- [X] T031 [US6] Implementar en `frontend/js/keyboard.js` la confirmación
       de selección/jugada con Enter o Espacio sobre la casilla enfocada, y
       verificar que los controles de Configuración y el botón de reinicio
       son operables por Tab/Enter/Espacio de forma nativa (CA-I-16)
-- [ ] T032 [US6] Refinar en `frontend/css/styles.css` la indicación visual
+- [X] T032 [US6] Refinar en `frontend/css/styles.css` la indicación visual
       de foco (`:focus-visible`) para todo control de Configuración,
       casilla del tablero y botón de reinicio (CA-I-17)
-- [ ] T033 [US6] Implementar en `frontend/js/keyboard.js` el rechazo
+- [X] T033 [US6] Implementar en `frontend/js/keyboard.js` el rechazo
       silencioso de una selección de teclado sobre el tablero cuando
       `EstadoUI.pantalla` es `"esperando_agente"` o `"terminada"`, sin
       alterar estado ni foco (CA-I-18)
-- [ ] T034 [US6] Ejecutar `pytest tests/e2e/test_ui_flows.py -k teclado` y
+- [X] T034 [US6] Ejecutar `pytest tests/e2e/test_ui_flows.py -k teclado` y
       confirmar que T029 está en verde
 
 **Checkpoint**: Interfaz completamente operable por teclado (Requisito
