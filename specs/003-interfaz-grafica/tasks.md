@@ -354,10 +354,10 @@ escritorio sin scroll horizontal ni pérdida de estado al redimensionar
 
 **Purpose**: Validación manual final transversal a todas las historias
 
-- [ ] T043 [P] Ejecutar manualmente la validación completa de
+- [X] T043 [P] Ejecutar manualmente la validación completa de
       `quickstart.md` (flujo con mouse, flujo exclusivamente por teclado, y
       diseño responsive en los tres anchos de referencia)
-- [ ] T044 [P] Revisar que ningún archivo bajo `frontend/js/` contiene
+- [X] T044 [P] Revisar que ningún archivo bajo `frontend/js/` contiene
       lógica de reglas de juego (victoria, empate, legalidad, heurística de
       agente), confirmando que toda decisión de negocio proviene de
       `api.js` (Principio II de la constitución)
