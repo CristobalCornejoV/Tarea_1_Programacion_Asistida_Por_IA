@@ -12,18 +12,15 @@ from typing import Optional
 from backend.src.agents.shared import listar_jugadas_legales, simular_jugada
 from backend.src.models.game_state import GameState, Jugada
 
-# Caché de memoización (tabla de transposición): clave canónica ->
-# (valor, tipo_cota, mejor_jugada). `tipo_cota` es necesario porque, con
-# poda alfa-beta, un valor calculado bajo una ventana [alpha, beta]
-# estrecha puede ser solo una cota (no el valor exacto); reutilizarlo sin
-# distinguir el tipo de cota daría resultados incorrectos bajo una ventana
-# distinta. Persiste en memoria de proceso entre partidas (CA-A-09); nunca
-# se limpia entre llamadas.
-_memo: dict[str, tuple[int, str, Optional[Jugada]]] = {}
-
-_EXACTO = "exacto"
-_COTA_INFERIOR = "cota_inferior"
-_COTA_SUPERIOR = "cota_superior"
+# Caché de memoización: clave canónica -> (valor, mejor_jugada). Solo se
+# almacena (y solo se reutiliza) cuando el valor es EXACTO — es decir, la
+# búsqueda que lo produjo no fue interrumpida por poda alfa-beta. Un valor
+# obtenido bajo poda es apenas una cota (válida solo para la ventana
+# [alpha, beta] con la que se pidió), no el valor real de la posición;
+# usar esa cota para acotar alpha/beta de una llamada futura con una
+# ventana distinta puede corromper esa búsqueda (ver nota larga en
+# `_negamax`). Persiste en memoria de proceso entre partidas (CA-A-09).
+_memo: dict[str, tuple[int, Optional[Jugada]]] = {}
 
 
 def _clave_canonica(estado: GameState) -> str:
@@ -47,20 +44,28 @@ def _valor_terminal_para_estado_raiz(estado: GameState) -> Optional[int]:
 def _negamax(estado: GameState, alpha: int, beta: int) -> tuple[Optional[Jugada], int]:
     """Devuelve (mejor_jugada, valor) para `estado.turn`, vía negamax con poda alfa-beta.
 
-    Nota importante: el motor (spec 001) deja `turn` sin alternar tras una
-    jugada ganadora (`turn` queda igual al ganador), a diferencia de una
-    jugada que continúa la partida o que empata (donde `turn` sí alterna).
-    Por eso las transiciones terminales se evalúan aquí mismo, en el bucle,
-    relativas a `jugada.player` (quien acaba de mover) — NO negando
-    genéricamente el valor de una llamada recursiva sobre el hijo — ya que
-    asumir que el turno siempre alterna daría un signo incorrecto
+    Nota importante (1): el motor (spec 001) deja `turn` sin alternar tras
+    una jugada ganadora (`turn` queda igual al ganador), a diferencia de
+    una jugada que continúa la partida o que empata (donde `turn` sí
+    alterna). Por eso las transiciones terminales se evalúan aquí mismo, en
+    el bucle, relativas a `jugada.player` (quien acaba de mover) — NO
+    negando genéricamente el valor de una llamada recursiva sobre el hijo —
+    ya que asumir que el turno siempre alterna daría un signo incorrecto
     precisamente en el caso de una victoria.
 
-    La caché (tabla de transposición) solo corta la búsqueda cuando el tipo
-    de cota almacenado es concluyente para la ventana [alpha, beta]
-    vigente; en caso contrario, se usa únicamente para acotar alpha/beta
-    antes de continuar la búsqueda, evitando el error clásico de reutilizar
-    una cota como si fuera un valor exacto.
+    Nota importante (2): la caché solo guarda y reutiliza valores EXACTOS
+    (búsquedas que no fueron cortadas por la poda alfa-beta, es decir,
+    `alpha_original < mejor_valor < beta`). Una primera versión también
+    guardaba cotas (superior/inferior) para usarlas al acotar alpha/beta de
+    llamadas futuras; eso introdujo un bug real: una cota, aunque
+    correcta para la ventana con la que se calculó, puede ser irrelevante
+    o incluso vacía de información bajo otra ventana (p. ej. una cota
+    inferior igual al valor máximo posible del juego no acota nada), y
+    usarla igualmente para estrechar alpha/beta de una búsqueda posterior
+    podía provocar que esa búsqueda se cortara antes de examinar la
+    respuesta ganadora real del rival, produciendo una decisión
+    incorrecta. Guardar solo valores exactos evita el problema por
+    completo: un valor exacto es correcto para cualquier ventana.
     """
     terminal_raiz = _valor_terminal_para_estado_raiz(estado)
     if terminal_raiz is not None:
@@ -70,15 +75,8 @@ def _negamax(estado: GameState, alpha: int, beta: int) -> tuple[Optional[Jugada]
     clave = _clave_canonica(estado)
     entrada = _memo.get(clave)
     if entrada is not None:
-        valor_cacheado, tipo_cota, jugada_cacheada = entrada
-        if tipo_cota == _EXACTO:
-            return jugada_cacheada, valor_cacheado
-        if tipo_cota == _COTA_INFERIOR:
-            alpha = max(alpha, valor_cacheado)
-        elif tipo_cota == _COTA_SUPERIOR:
-            beta = min(beta, valor_cacheado)
-        if alpha >= beta:
-            return jugada_cacheada, valor_cacheado
+        valor_cacheado, jugada_cacheada = entrada
+        return jugada_cacheada, valor_cacheado
 
     mejor_valor = -2
     mejor_jugada: Optional[Jugada] = None
@@ -99,13 +97,8 @@ def _negamax(estado: GameState, alpha: int, beta: int) -> tuple[Optional[Jugada]
         if alpha >= beta:
             break
 
-    if mejor_valor <= alpha_original:
-        tipo_cota = _COTA_SUPERIOR
-    elif mejor_valor >= beta:
-        tipo_cota = _COTA_INFERIOR
-    else:
-        tipo_cota = _EXACTO
-    _memo[clave] = (mejor_valor, tipo_cota, mejor_jugada)
+    if alpha_original < mejor_valor < beta:
+        _memo[clave] = (mejor_valor, mejor_jugada)
     return mejor_jugada, mejor_valor
 
 

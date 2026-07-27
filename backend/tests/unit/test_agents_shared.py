@@ -1,11 +1,19 @@
-"""Tests unitarios de utilidades compartidas de agentes (T002).
+"""Tests unitarios de utilidades compartidas de agentes (T002, T027).
 
 listar_jugadas_legales es una utilidad fundacional, base de CA-A-01,
 CA-A-02, CA-A-03, CA-A-05 y CA-A-08 (probados en las fases de US1/US2/US3);
 estos tests verifican su corrección estructural de forma independiente.
+asegurar_jugada_disponible (T027) cubre el edge case de spec.md: ninguna
+jugada legal disponible (tablero lleno o partida finalizada).
 """
 
-from backend.src.agents.shared import listar_jugadas_legales
+import pytest
+
+from backend.src.agents.shared import (
+    SinJugadasLegales,
+    asegurar_jugada_disponible,
+    listar_jugadas_legales,
+)
 from backend.src.engine.rules import aplicar_jugada, crear_partida
 from backend.src.models.game_state import Coordenada, Jugada
 
@@ -69,3 +77,18 @@ def test_lista_mover_en_continua_fase_movimiento():
     destinos = {(j.to.row, j.to.col) for j in jugadas}
     assert origenes == {(0, 0), (0, 1), (1, 0)}
     assert destinos == {(0, 2), (1, 1), (2, 0)}
+
+
+def test_asegurar_jugada_disponible_no_lanza_si_hay_jugadas():
+    estado = crear_partida("clasica")
+    asegurar_jugada_disponible(estado)  # no debe lanzar
+
+
+def test_asegurar_jugada_disponible_lanza_si_partida_finalizada():  # T027
+    estado = crear_partida("clasica")
+    secuencia = [("X", 0, 0), ("O", 1, 0), ("X", 0, 1), ("O", 1, 1), ("X", 0, 2)]
+    for player, row, col in secuencia:
+        estado = aplicar_jugada(estado, _colocar(player, row, col))
+    assert estado.status == "victoria"
+    with pytest.raises(SinJugadasLegales):
+        asegurar_jugada_disponible(estado)
