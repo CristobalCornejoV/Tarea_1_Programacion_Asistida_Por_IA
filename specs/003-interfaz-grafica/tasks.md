@@ -50,7 +50,7 @@ Excelente, US7 = Diseño Responsive).
       Structure
 - [X] T002 [P] Montar `frontend/` como archivos estáticos en
       `backend/src/main.py` (`StaticFiles`), sirviendo `index.html` en `/`
-- [ ] T003 [P] Añadir dependencia de test de navegador controlado (p. ej.
+- [X] T003 [P] Añadir dependencia de test de navegador controlado (p. ej.
       `pytest-playwright`) y crear `tests/e2e/` con configuración base para
       servir `frontend/` durante los tests
 
@@ -63,17 +63,17 @@ Excelente, US7 = Diseño Responsive).
 **⚠️ CRITICAL**: Ninguna tarea de US1-US7 puede iniciarse hasta completar
 esta fase
 
-- [ ] T004 [P] Implementar `frontend/js/api.js`: `crearPartida(mode)`,
+- [X] T004 [P] Implementar `frontend/js/api.js`: `crearPartida(mode)`,
       `obtenerPartida(gameId)`, `aplicarJugada(gameId, jugada)`,
       `obtenerJugadaAgente(nivel, solicitud)`, envolviendo `fetch` hacia los
       contratos de `001-motor-tres-en-raya/contracts/games-api.md` y
       `002-agentes-de-juego/contracts/agents-api.md` — único módulo que
       conoce URLs y forma de las peticiones HTTP
-- [ ] T005 [P] Implementar `frontend/js/state.js`: objeto `EstadoUI`
+- [X] T005 [P] Implementar `frontend/js/state.js`: objeto `EstadoUI`
       (`pantalla`, `configuracion`, `game_state`, `foco_actual`,
       `casilla_seleccionada`) y `MarcadorSesion`, exactamente según
       `data-model.md`
-- [ ] T006 Implementar el esqueleto de `frontend/index.html` con los
+- [X] T006 Implementar el esqueleto de `frontend/index.html` con los
       contenedores de las 4 pantallas (Configuración, En Juego/Esperando
       Agente, Terminada) y un estilo base de foco visible en
       `frontend/css/styles.css` (base para CA-I-17, refinado en US6)

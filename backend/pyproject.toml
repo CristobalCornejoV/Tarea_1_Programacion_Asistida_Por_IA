@@ -13,7 +13,8 @@ dependencies = [
 test = [
     "pytest",
     "httpx",
+    "pytest-playwright",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "../tests"]
