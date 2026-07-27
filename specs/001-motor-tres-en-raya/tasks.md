@@ -147,7 +147,7 @@ manualmente con `quickstart.md` (sección "modalidad continua completa")
       ocupada en movimiento (CA-M-12), victoria en cualquier fase
       (CA-M-13), empate por repetición de posición 3 veces (CA-M-14),
       rechazo de jugada tras finalizar (CA-M-15)
-- [ ] T018 [P] [US2] Tests de contrato para `POST /api/games` (mode
+- [X] T018 [P] [US2] Tests de contrato para `POST /api/games` (mode
       "continua") y `POST /api/games/{game_id}/moves` (colocar y mover) en
       `backend/tests/contract/test_games_api.py`, cubriendo CA-M-08 a
       CA-M-15 a nivel HTTP
@@ -182,7 +182,7 @@ manualmente con `quickstart.md` (sección "modalidad continua completa")
       colocación (`fase_incorrecta`) y de cualquier jugada tras
       `status != "en_curso"` en modalidad continua, en
       `backend/src/engine/rules.py` (CA-M-15)
-- [ ] T027 [US2] Conectar `mode: "continua"` en `POST /api/games` y en
+- [X] T027 [US2] Conectar `mode: "continua"` en `POST /api/games` y en
       `POST /api/games/{game_id}/moves` (tipo `"mover"`) en
       `backend/src/api/games.py` (CA-M-08 a CA-M-15 expuestos vía HTTP)
 - [ ] T028 [US2] Ejecutar `pytest backend/tests/unit/test_engine_rules.py
