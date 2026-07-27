@@ -53,7 +53,7 @@ necesitan
 
 **⚠️ CRITICAL**: Ninguna tarea de US1/US2 puede iniciarse hasta completar esta fase
 
-- [ ] T004 [P] Definir los modelos Pydantic inmutables (`frozen=True`)
+- [X] T004 [P] Definir los modelos Pydantic inmutables (`frozen=True`)
       `GameState`, `Jugada` (colocar/mover) y `ErrorJugada` en
       `backend/src/models/game_state.py`, exactamente según el esquema de
       `data-model.md` (base estructural para todo CA-M-01 a CA-M-15)
