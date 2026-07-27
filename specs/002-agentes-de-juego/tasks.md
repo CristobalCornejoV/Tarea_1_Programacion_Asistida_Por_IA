@@ -52,7 +52,7 @@ implementación y prueba independientes.
 **⚠️ CRITICAL**: Ninguna tarea de US1/US2/US3 puede iniciarse hasta completar
 esta fase
 
-- [ ] T002 [P] Implementar `listar_jugadas_legales(estado: GameState) ->
+- [X] T002 [P] Implementar `listar_jugadas_legales(estado: GameState) ->
       list[Jugada]` en `backend/src/agents/shared.py`, reutilizando
       `backend/src/models/game_state.py` de la spec 001 (colocar en modo
       clásico/fase colocación, mover en fase movimiento) — base de CA-A-01,
