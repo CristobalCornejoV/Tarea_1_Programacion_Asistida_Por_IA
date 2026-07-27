@@ -139,7 +139,7 @@ manualmente con `quickstart.md` (sección "modalidad continua completa")
 
 ### Tests para Modalidad Continua (escribir primero, deben fallar)
 
-- [ ] T017 [P] [US2] Tests unitarios del motor en modalidad continua en
+- [X] T017 [P] [US2] Tests unitarios del motor en modalidad continua en
       `backend/tests/unit/test_engine_rules.py`: estado inicial con 3
       fichas por jugador (CA-M-08), descuento de fichas al colocar
       (CA-M-09), transición a fase de movimiento (CA-M-10), movimiento a
@@ -154,31 +154,31 @@ manualmente con `quickstart.md` (sección "modalidad continua completa")
 
 ### Implementación para Modalidad Continua
 
-- [ ] T019 [US2] Extender `crear_partida(mode)` en
+- [X] T019 [US2] Extender `crear_partida(mode)` en
       `backend/src/engine/rules.py` para inicializar `phase: "colocacion"`
       y `fichas_disponibles: {"X": 3, "O": 3}` cuando `mode = "continua"`
       (CA-M-08)
-- [ ] T020 [US2] Extender `colocar_ficha` en `backend/src/engine/rules.py`
+- [X] T020 [US2] Extender `colocar_ficha` en `backend/src/engine/rules.py`
       para decrementar `fichas_disponibles` del jugador y alternar turno
       durante `phase = "colocacion"` (CA-M-09)
-- [ ] T021 [US2] Implementar la transición automática de `phase:
+- [X] T021 [US2] Implementar la transición automática de `phase:
       "colocacion"` a `phase: "movimiento"` cuando ambos jugadores llegan a
       0 fichas disponibles, en `backend/src/engine/rules.py` (CA-M-10)
-- [ ] T022 [US2] Implementar `mover_ficha(estado, jugada)` en
+- [X] T022 [US2] Implementar `mover_ficha(estado, jugada)` en
       `backend/src/engine/rules.py`: mueve una ficha propia desde `from` a
       cualquier `to` vacío sin restricción de adyacencia (CA-M-11)
-- [ ] T023 [US2] Añadir validación en `mover_ficha` que rechace mover una
+- [X] T023 [US2] Añadir validación en `mover_ficha` que rechace mover una
       ficha ajena o mover hacia una casilla ocupada, en
       `backend/src/engine/rules.py` (CA-M-12)
-- [ ] T024 [US2] Extender la integración de `comprobar_victoria` para que se
+- [X] T024 [US2] Extender la integración de `comprobar_victoria` para que se
       evalúe tras cada `colocar_ficha` y `mover_ficha` en ambas fases, en
       `backend/src/engine/rules.py` (CA-M-13)
-- [ ] T025 [US2] Implementar el contador interno `posiciones_vistas` y la
+- [X] T025 [US2] Implementar el contador interno `posiciones_vistas` y la
       regla de empate al alcanzar 3 repeticiones de la misma posición
       exacta durante `phase = "movimiento"`, en
       `backend/src/engine/repetition.py`, integrado en `aplicar_jugada`
       (CA-M-14)
-- [ ] T026 [US2] Añadir rechazo de movimientos antes de completar la fase de
+- [X] T026 [US2] Añadir rechazo de movimientos antes de completar la fase de
       colocación (`fase_incorrecta`) y de cualquier jugada tras
       `status != "en_curso"` en modalidad continua, en
       `backend/src/engine/rules.py` (CA-M-15)

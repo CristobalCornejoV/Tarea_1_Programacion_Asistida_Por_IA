@@ -31,6 +31,11 @@ class GameState(BaseModel):
     status: Literal["en_curso", "victoria", "empate"] = "en_curso"
     winner: Optional[Ficha] = None
     winning_line: Optional[list[Coordenada]] = None
+    # Campo interno del motor (no forma parte del JSON público, ver
+    # data-model.md): conteo de posiciones vistas durante la fase de
+    # movimiento de modalidad continua, usado por la regla de empate por
+    # repetición (CA-M-14).
+    posiciones_vistas: dict[str, int] = Field(default_factory=dict, exclude=True)
 
     @field_validator("board")
     @classmethod
