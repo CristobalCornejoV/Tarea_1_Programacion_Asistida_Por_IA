@@ -39,3 +39,10 @@
 - Engine rules and agent decision logic are intentionally out of scope, per
   explicit user instruction; the UI is specified only in terms of what it
   displays and how it reacts to results/errors it receives.
+- **2026-07-27 amendment**: added User Story 7 (Uso en Pantallas de
+  Distinto Tamaño / responsive design), CA-I-19 through CA-I-22, FR-010,
+  SC-007, one new edge case, and one new Assumption — this was a real gap
+  identified when the user's feature description explicitly required
+  responsive design but neither the original spec.md nor plan.md mentioned
+  it. All new criteria remain technology-agnostic (no breakpoint values
+  tied to a specific CSS framework) and testable via viewport width.

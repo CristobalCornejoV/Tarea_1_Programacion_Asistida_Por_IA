@@ -90,3 +90,30 @@
   asociado a un identificador de sesión — sobre-ingeniería para un
   requisito explícitamente volátil y de un solo cliente (curso, sin
   multiusuario concurrente sobre el mismo marcador).
+
+## Decisión 6: Estrategia de diseño responsive (US7, CA-I-19 a CA-I-22)
+
+- **Decision**: Layout "mobile-first" con CSS estándar únicamente: una
+  etiqueta `<meta name="viewport" content="width=device-width,
+  initial-scale=1">` en `index.html`; el tablero se dimensiona con unidades
+  relativas (`%`, `fr` de CSS Grid) en lugar de píxeles fijos, de forma que
+  cada casilla nunca sea menor a un tamaño mínimo de objetivo táctil
+  (~44x44px CSS, guía de accesibilidad ampliamente adoptada); la
+  disposición general (tablero, marcador, controles de Configuración) usa
+  Flexbox/Grid con `flex-wrap`/`grid-template-areas` que se reordenan
+  mediante un número reducido de media queries (p. ej. un punto de quiebre
+  alrededor de ~600px para pasar de columna única a una disposición más
+  ancha), en lugar de fijar un catálogo de dispositivos específicos.
+- **Rationale**: Cumple el Principio I (sin frameworks de UI) usando
+  exclusivamente CSS del navegador; un enfoque mobile-first con unidades
+  relativas y pocos puntos de quiebre es el patrón estándar más simple para
+  cubrir el rango 320px-1920px sin lógica JS adicional (el estado de la UI
+  ya es independiente de la presentación, ver Project Structure de
+  `plan.md`), y evita que un redimensionamiento de ventana (CA-I-22) pueda
+  afectar `EstadoUI`, ya que ningún dato de aplicación vive en CSS.
+- **Alternatives considered**: Un framework CSS de utilidades o de
+  componentes (p. ej. Bootstrap, Tailwind) — violaría el Principio I
+  ("sin frameworks de UI"); detectar el tamaño de pantalla en JavaScript
+  para decidir qué renderizar — innecesariamente complejo y acoplaría
+  lógica de presentación a `board.js`/`game-screen.js`, que hoy solo se
+  ocupan de `GameState` y reglas de interacción, no de layout visual.

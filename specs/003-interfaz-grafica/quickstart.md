@@ -44,12 +44,28 @@
 5. Completar una partida y reiniciarla usando solo el botón de reinicio
    activado por teclado.
 
+## Validación manual: diseño responsive
+
+1. Con las herramientas de desarrollador del navegador, emular al menos
+   tres anchos de viewport representativos: móvil (~375px), tablet
+   (~768px) y escritorio (~1440px).
+2. En cada ancho, completar el flujo de Configuración → jugar una partida
+   → reiniciar, verificando que el tablero, el marcador y los controles de
+   Configuración permanecen visibles y operables sin scroll horizontal
+   (CA-I-19, CA-I-20).
+3. En el ancho móvil, verificar que cada casilla del tablero es lo
+   suficientemente grande para tocarla con precisión (CA-I-21).
+4. Con una partida en curso, redimensionar la ventana del navegador (o
+   rotar el emulador de dispositivo) y verificar que el tablero, el turno,
+   la fase y el marcador no cambian, y que el foco de teclado (si estaba
+   activo) se conserva (CA-I-22).
+
 ## Ejecutar la suite automatizada (Pytest + navegador controlado)
 
 ```bash
 pytest tests/e2e/test_ui_flows.py -v
 ```
 
-**Resultado esperado**: todos los flujos críticos (CA-I-01 a CA-I-18) en
+**Resultado esperado**: todos los flujos críticos (CA-I-01 a CA-I-22) en
 verde contra el `frontend/` servido localmente, sin necesidad de un
 framework de testing JS (ver `research.md` Decisión 4).

@@ -56,7 +56,9 @@ de los agentes; la interfaz solo interpreta campos ya resueltos (`status`,
 
 **Scale/Scope**: Una sola página (SPA minimalista sin router), cuatro
 estados de UI (Configuración, En Juego, Esperando Agente, Terminada), un
-tablero de 9 casillas
+tablero de 9 casillas; layout responsive sobre un rango de referencia de
+~320px a 1920px de ancho de viewport (móvil, tablet, escritorio — CA-I-19
+a CA-I-22, ver `research.md` Decisión 6)
 
 ## Constitution Check
 
@@ -64,9 +66,9 @@ tablero de 9 casillas
 
 | Principio | Evaluación |
 |---|---|
-| I. Stack Tecnológico Fijo | PASS — Vanilla JS/HTML/CSS, sin frameworks de UI |
+| I. Stack Tecnológico Fijo | PASS — Vanilla JS/HTML/CSS, sin frameworks de UI; el diseño responsive (US7) se resuelve con CSS estándar (media queries, Flexbox/Grid), sin librerías adicionales |
 | II. Motor y Agentes como Funciones/Endpoints Puros | PASS — la interfaz consume la API sin reimplementar reglas; ver Constraints arriba |
-| III. Test-First con Cobertura de CA-* | PASS (gate de proceso) — CA-I-01..18 tendrán al menos un test (Pytest + navegador controlado) antes de cerrar sus tareas |
+| III. Test-First con Cobertura de CA-* | PASS (gate de proceso) — CA-I-01..22 tendrán al menos un test (Pytest + navegador controlado) antes de cerrar sus tareas |
 | IV. Disciplina de Commits Atómicos | PASS (gate de proceso) |
 | V. Corrección de Bugs Dirigida por la Especificación | PASS (gate de proceso) |
 | VI. Rendimiento en Tiempo Real (<1s) | PASS — la interfaz no añade cómputo relevante; el límite de tiempo lo determina la respuesta del agente (spec 002), la interfaz solo debe reaccionar a ella sin demora perceptible |
@@ -118,7 +120,11 @@ requiere build step; `backend/src/main.py` (spec 001) monta
 proceso que la API, evitando problemas de CORS en desarrollo. Los módulos JS
 se organizan por responsabilidad (estado, tablero, pantallas, teclado) pero
 ninguno contiene lógica de reglas de juego — todos delegan en `api.js`, que
-es el único punto de contacto con el backend.
+es el único punto de contacto con el backend. El diseño responsive (US7) no
+añade ningún módulo JS nuevo: se resuelve enteramente en
+`frontend/css/styles.css` (media queries, Flexbox/Grid) y una etiqueta
+`<meta name="viewport">` en `index.html`, ya que el estado de la interfaz
+(`EstadoUI`) es independiente de cómo se distribuya visualmente.
 
 ## Complexity Tracking
 
