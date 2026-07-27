@@ -38,7 +38,7 @@ implementación y prueba independientes.
 
 **Purpose**: Estructura de directorios y registro del router de agentes
 
-- [ ] T001 Crear `backend/src/agents/` y
+- [X] T001 Crear `backend/src/agents/` y
       `backend/tests/integration/` (directorios nuevos sobre la estructura
       ya existente de `001-motor-tres-en-raya`), según `plan.md` → Project
       Structure
