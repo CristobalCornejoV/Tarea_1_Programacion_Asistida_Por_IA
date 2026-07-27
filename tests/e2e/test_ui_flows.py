@@ -374,3 +374,98 @@ def test_marcador_y_reinicio(page: Page, live_server_url: str) -> None:
     expect(page.locator("#config-screen")).to_be_visible()
     expect(page.locator("#score-x")).to_have_text("1")
     expect(page.locator("#score-draws")).to_have_text("1")
+
+
+def test_operacion_por_teclado(page: Page, live_server_url: str) -> None:
+    """CA-I-16 a CA-I-18: flujo completo y bloqueo mediante teclado."""
+
+    new_games = [
+        _game_state(game_id="keyboard-game-1"),
+        _game_state(game_id="keyboard-game-2"),
+    ]
+    move_requests = []
+    move_responses = [
+        {
+            "error": "casilla_ocupada",
+            "message": "La casilla seleccionada está ocupada.",
+            "_status": 422,
+        },
+        _game_state(
+            game_id="keyboard-game-1",
+            board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+            status="victoria",
+            winner="X",
+            winning_line=[
+                {"row": 0, "col": 0},
+                {"row": 0, "col": 1},
+                {"row": 0, "col": 2},
+            ],
+        ),
+    ]
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, new_games.pop(0), status=201),
+    )
+
+    def handle_move(route) -> None:
+        move_requests.append(route.request.post_data_json)
+        response = move_responses.pop(0)
+        status = response.pop("_status", 200)
+        _fulfill_json(route, response, status=status)
+
+    page.route("**/api/games/*/moves", handle_move)
+    page.goto(live_server_url)
+
+    page.keyboard.press("Tab")
+    expect(page.locator(".skip-link")).to_be_focused()
+    page.keyboard.press("Tab")
+    expect(page.locator('input[name="modo"][value="humano_vs_humano"]')).to_be_focused()
+    page.keyboard.press("Space")
+    page.keyboard.press("Tab")
+    expect(page.locator('input[name="ficha_jugador_1"][value="X"]')).to_be_focused()
+    page.keyboard.press("Space")
+    page.keyboard.press("Tab")
+    expect(page.locator('input[name="modalidad"][value="clasica"]')).to_be_focused()
+    page.keyboard.press("Space")
+    page.keyboard.press("Tab")
+    expect(page.locator("#start-game")).to_be_focused()
+    page.keyboard.press("Enter")
+
+    expect(page.locator("#game-screen")).to_be_visible()
+    page.keyboard.press("Tab")
+    expect(page.locator("#change-config")).to_be_focused()
+    page.keyboard.press("Tab")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+    assert page.locator("#cell-0-0").evaluate(
+        "(element) => getComputedStyle(element).outlineStyle !== 'none'"
+    )
+
+    page.keyboard.press("ArrowLeft")
+    page.keyboard.press("ArrowUp")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+    page.keyboard.press("ArrowRight")
+    expect(page.locator("#cell-0-1")).to_be_focused()
+    page.keyboard.press("ArrowDown")
+    expect(page.locator("#cell-1-1")).to_be_focused()
+    page.keyboard.press("ArrowLeft")
+    page.keyboard.press("ArrowUp")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+
+    page.keyboard.press("Space")
+    expect(page.locator("#game-notice")).to_contain_text("ocupada")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+    page.keyboard.press("Enter")
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+
+    requests_before_blocked_input = len(move_requests)
+    page.keyboard.press("Space")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+    assert len(move_requests) == requests_before_blocked_input
+
+    page.keyboard.press("Tab")
+    expect(page.locator("#restart-game")).to_be_focused()
+    page.keyboard.press("Enter")
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#score-x")).to_have_text("1")

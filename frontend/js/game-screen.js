@@ -23,6 +23,7 @@ import {
   inicializarMarcador,
   registrarResultado,
 } from "./scoreboard.js";
+import { inicializarTeclado } from "./keyboard.js";
 
 const TEXTOS = Object.freeze({
   modos: {
@@ -366,6 +367,7 @@ function manejarCambioConfiguracion() {
 function inicializar() {
   inicializarPantallaConfiguracion({ alIniciar: iniciarPartida });
   inicializarTablero(manejarSeleccionCasilla);
+  inicializarTeclado();
   inicializarMarcador({ alReiniciar: reiniciarPartida });
   document
     .querySelector("#change-config")
