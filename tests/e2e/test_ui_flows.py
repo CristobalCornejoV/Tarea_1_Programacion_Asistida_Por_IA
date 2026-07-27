@@ -469,3 +469,142 @@ def test_operacion_por_teclado(page: Page, live_server_url: str) -> None:
     page.keyboard.press("Enter")
     expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
     expect(page.locator("#score-x")).to_have_text("1")
+
+
+def _assert_no_horizontal_scroll(page: Page) -> None:
+    metrics = page.evaluate(
+        """() => ({
+            viewport: document.documentElement.clientWidth,
+            document: document.documentElement.scrollWidth,
+            body: document.body.scrollWidth,
+        })"""
+    )
+    assert metrics["document"] <= metrics["viewport"] + 1
+    assert metrics["body"] <= metrics["viewport"] + 1
+
+
+def _assert_inside_viewport(page: Page, selector: str) -> None:
+    box = page.locator(selector).bounding_box()
+    assert box is not None
+    assert box["x"] >= -1
+    assert box["x"] + box["width"] <= page.viewport_size["width"] + 1
+
+
+@pytest.mark.parametrize("viewport_width", [375, 768, 1440])
+def test_responsive_sin_scroll_horizontal(
+    page: Page,
+    live_server_url: str,
+    viewport_width: int,
+) -> None:
+    """CA-I-19 y CA-I-20: flujo completo sin desplazamiento horizontal."""
+
+    initial = _game_state(game_id=f"responsive-{viewport_width}")
+    finished = _game_state(
+        game_id=f"responsive-{viewport_width}",
+        board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+        status="victoria",
+        winner="X",
+        winning_line=[
+            {"row": 0, "col": 0},
+            {"row": 0, "col": 1},
+            {"row": 0, "col": 2},
+        ],
+    )
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, initial, status=201),
+    )
+    page.route(
+        "**/api/games/*/moves",
+        lambda route: _fulfill_json(route, finished),
+    )
+    page.set_viewport_size({"width": viewport_width, "height": 1000})
+    page.goto(live_server_url)
+
+    expect(page.locator(".scoreboard")).to_be_visible()
+    expect(page.locator("#config-form")).to_be_visible()
+    expect(page.locator("#start-game")).to_be_visible()
+    _assert_inside_viewport(page, ".scoreboard")
+    _assert_inside_viewport(page, "#config-form")
+    _assert_no_horizontal_scroll(page)
+
+    _select_human_game(page)
+    expect(page.locator("#board")).to_be_visible()
+    expect(page.locator("#restart-game")).to_be_visible()
+    _assert_inside_viewport(page, "#board")
+    _assert_inside_viewport(page, "#restart-game")
+    _assert_no_horizontal_scroll(page)
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#result-panel")).to_be_visible()
+    _assert_no_horizontal_scroll(page)
+
+    page.get_by_role("button", name="Reiniciar partida").click()
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#score-x")).to_have_text("1")
+    _assert_inside_viewport(page, "#board")
+    _assert_no_horizontal_scroll(page)
+
+
+def test_responsive_objetivo_tactil(page: Page, live_server_url: str) -> None:
+    """CA-I-21: todas las casillas conservan un objetivo táctil suficiente."""
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, _game_state(), status=201),
+    )
+    page.set_viewport_size({"width": 320, "height": 800})
+    page.goto(live_server_url)
+    _select_human_game(page)
+
+    boxes = page.locator(".board-cell").evaluate_all(
+        """cells => cells.map(cell => {
+            const box = cell.getBoundingClientRect();
+            return { width: box.width, height: box.height };
+        })"""
+    )
+    assert len(boxes) == 9
+    assert all(box["width"] >= 44 and box["height"] >= 44 for box in boxes)
+    _assert_no_horizontal_scroll(page)
+
+
+def test_responsive_resize_preserva_estado(
+    page: Page, live_server_url: str
+) -> None:
+    """CA-I-22: redimensionar preserva partida, marcador, fase y foco."""
+
+    movement_state = _game_state(
+        game_id="resize-e2e",
+        mode="continua",
+        phase="movimiento",
+        board=[
+            ["X", "O", "X"],
+            ["O", "X", "O"],
+            [None, None, None],
+        ],
+        turn="X",
+    )
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, movement_state, status=201),
+    )
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(live_server_url)
+    _select_human_game(page, variant="Continua")
+    page.locator("#cell-1-1").focus()
+
+    board_before = page.locator(".board-cell").all_text_contents()
+    turn_before = page.locator("#turn-detail").text_content()
+    phase_before = page.locator("#fact-phase").text_content()
+    score_before = page.locator(".score-list").text_content()
+    focus_before = page.evaluate("document.activeElement.id")
+
+    for width in (375, 768, 1440):
+        page.set_viewport_size({"width": width, "height": 900})
+        expect(page.locator(".board-cell")).to_have_text(board_before)
+        expect(page.locator("#turn-detail")).to_have_text(turn_before)
+        expect(page.locator("#fact-phase")).to_have_text(phase_before)
+        expect(page.locator(".score-list")).to_have_text(score_before)
+        assert page.evaluate("document.activeElement.id") == focus_before
+        _assert_inside_viewport(page, "#board")
+        _assert_no_horizontal_scroll(page)
