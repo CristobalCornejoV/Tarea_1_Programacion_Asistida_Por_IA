@@ -1,9 +1,10 @@
-"""Tests fundacionales del esqueleto de la app FastAPI (T006).
+"""Tests fundacionales del esqueleto de la app FastAPI (T006, spec 001) y
+del montaje del frontend estático (T002, spec 003).
 
-No cubren un CA-M-* de comportamiento de juego (el router de /api/games aún
-no tiene endpoints; esos llegan en las tareas de US1/US2); verifican que la
-app arranca, el router está montado bajo el prefijo correcto, y el almacén
-en memoria existe y comienza vacío.
+No cubren un CA-M-*/CA-I-* de comportamiento (son tareas de Setup);
+verifican que la app arranca, el router está montado bajo el prefijo
+correcto, el almacén en memoria existe y comienza vacío, y que servir
+`frontend/` como estáticos en "/" no interfiere con las rutas de `/api/*`.
 """
 
 from fastapi.testclient import TestClient
@@ -32,3 +33,19 @@ def test_router_games_tiene_el_prefijo_correcto():
 
 def test_almacen_en_memoria_de_partidas_inicia_vacio():
     assert partidas == {}
+
+
+def test_frontend_estatico_sirve_index_html_en_raiz():  # T002
+    client = TestClient(app)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Tres en Raya</title>" in response.text
+
+
+def test_montaje_de_frontend_no_interfiere_con_rutas_api():  # T002
+    client = TestClient(app)
+    # Con el frontend montado en "/", las rutas /api/* SHALL seguir
+    # resolviendo contra sus routers (games/agents), no contra StaticFiles.
+    response = client.post("/api/games", json={"mode": "clasica"})
+    assert response.status_code == 201

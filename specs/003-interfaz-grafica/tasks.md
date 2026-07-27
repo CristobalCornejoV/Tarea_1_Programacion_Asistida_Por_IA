@@ -44,11 +44,11 @@ Excelente, US7 = Diseño Responsive).
 
 **Purpose**: Esqueleto estático del frontend y arnés de pruebas e2e
 
-- [ ] T001 Crear `frontend/index.html`, `frontend/css/styles.css` y los
+- [X] T001 Crear `frontend/index.html`, `frontend/css/styles.css` y los
       módulos vacíos `frontend/js/{api,state,board,config-screen,
       game-screen,scoreboard,keyboard}.js`, según `plan.md` → Project
       Structure
-- [ ] T002 [P] Montar `frontend/` como archivos estáticos en
+- [X] T002 [P] Montar `frontend/` como archivos estáticos en
       `backend/src/main.py` (`StaticFiles`), sirviendo `index.html` en `/`
 - [ ] T003 [P] Añadir dependencia de test de navegador controlado (p. ej.
       `pytest-playwright`) y crear `tests/e2e/` con configuración base para
