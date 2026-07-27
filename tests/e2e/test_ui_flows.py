@@ -79,7 +79,7 @@ def test_configuracion_inicial(page: Page, live_server_url: str) -> None:
     expect(page.locator("#agent-level-group")).to_be_visible()
     expect(page.locator('input[name="nivel_agente"]')).to_have_count(3)
     page.get_by_label("Medio").check()
-    page.get_by_label("Jugador 1 usa O").check()
+    page.get_by_label("Jugador 1 usa X").check()
     page.get_by_label("Clásica").check()
     page.get_by_role("button", name="Iniciar partida").click()
 
