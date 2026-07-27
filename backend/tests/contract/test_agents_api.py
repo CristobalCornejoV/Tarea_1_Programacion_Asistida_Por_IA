@@ -1,4 +1,5 @@
-"""Tests de contrato HTTP de la API de agentes (T006). Cubre CA-A-01, CA-A-02.
+"""Tests de contrato HTTP de la API de agentes: Sencillo (T006, CA-A-01,
+CA-A-02), Medio (T011, CA-A-03 a CA-A-06) y Complejo (T018, CA-A-08).
 
 Ver `contracts/agents-api.md`.
 """
@@ -56,3 +57,74 @@ def test_post_agents_nivel_desconocido_devuelve_404():
     }
     resp = client.post("/api/agents/inexistente/move", json=body)
     assert resp.status_code == 404
+
+
+def test_post_agents_medio_move_juega_victoria_inmediata():  # CA-A-03
+    body = {
+        "board": [["X", "X", None], ["O", "O", None], [None, None, None]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+    }
+    resp = client.post("/api/agents/medio/move", json=body)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["to"] == {"row": 0, "col": 2}
+
+
+def test_post_agents_medio_move_bloquea_amenaza_del_rival():  # CA-A-04
+    body = {
+        "board": [["O", "O", None], ["X", None, None], [None, None, "X"]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+    }
+    resp = client.post("/api/agents/medio/move", json=body)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["to"] == {"row": 0, "col": 2}
+
+
+def test_post_agents_medio_move_azar_si_no_hay_condiciones():  # CA-A-05
+    body = {
+        "board": [["X", None, None], [None, None, None], [None, None, None]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "O",
+        "fichas_disponibles": None,
+    }
+    resp = client.post("/api/agents/medio/move", json=body)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["type"] == "colocar"
+    assert (data["to"]["row"], data["to"]["col"]) != (0, 0)
+
+
+def test_post_agents_complejo_move_devuelve_jugada_valida_en_tablero_vacio():
+    body = {
+        "board": [[None, None, None], [None, None, None], [None, None, None]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+    }
+    resp = client.post("/api/agents/complejo/move", json=body)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["type"] == "colocar"
+    assert _es_casilla_valida(data["to"]["row"], data["to"]["col"])
+
+
+def test_post_agents_complejo_move_juega_victoria_inmediata():  # CA-A-08
+    body = {
+        "board": [["X", "X", None], ["O", "O", None], [None, None, None]],
+        "mode": "clasica",
+        "phase": None,
+        "turn": "X",
+        "fichas_disponibles": None,
+    }
+    resp = client.post("/api/agents/complejo/move", json=body)
+    assert resp.status_code == 200
+    assert resp.json()["to"] == {"row": 0, "col": 2}

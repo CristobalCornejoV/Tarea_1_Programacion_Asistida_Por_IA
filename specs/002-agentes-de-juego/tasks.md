@@ -78,7 +78,7 @@ conceptualmente de que exista US1 para su validación estadística, CA-A-07)
 elegida al azar, sin usar información de turnos anteriores
 
 **Independent Test**: `pytest backend/tests/unit/test_agent_simple.py
-backend/tests/contract/test_agents_api.py -k sencillo`
+backend/tests/contract/test_agents_api.py`
 
 ### Tests para Agente Sencillo (escribir primero, deben fallar)
 
@@ -101,8 +101,8 @@ backend/tests/contract/test_agents_api.py -k sencillo`
 - [X] T008 [US1] Conectar `POST /api/agents/sencillo/move` en
       `backend/src/api/agents.py` a `simple.decidir_jugada` (CA-A-01,
       CA-A-02)
-- [ ] T009 [US1] Ejecutar `pytest backend/tests/unit/test_agent_simple.py
-      backend/tests/contract/test_agents_api.py -k sencillo` y confirmar
+- [X] T009 [US1] Ejecutar `pytest backend/tests/unit/test_agent_simple.py
+      backend/tests/contract/test_agents_api.py` y confirmar
       que T005/T006 están en verde
 
 **Checkpoint**: Agente Sencillo completamente funcional y testeado de forma
@@ -116,11 +116,11 @@ independiente — MVP entregable
 si no juega al azar
 
 **Independent Test**: `pytest backend/tests/unit/test_agent_medium.py
-backend/tests/contract/test_agents_api.py -k medio`
+backend/tests/contract/test_agents_api.py`
 
 ### Tests para Agente Medio (escribir primero, deben fallar)
 
-- [ ] T010 [P] [US2] Test unitario en
+- [X] T010 [P] [US2] Test unitario en
       `backend/tests/unit/test_agent_medium.py`: juega la victoria
       inmediata cuando existe (CA-A-03), bloquea al rival cuando no tiene
       victoria propia y el rival amenaza ganar (CA-A-04), juega al azar
@@ -128,7 +128,7 @@ backend/tests/contract/test_agents_api.py -k medio`
       decisión sin importar cómo se llegó al tablero actual —solo a partir
       del estado recibido— demostrando que no requiere estado propio entre
       llamadas (CA-A-06)
-- [ ] T011 [P] [US2] Test de contrato en
+- [X] T011 [P] [US2] Test de contrato en
       `backend/tests/contract/test_agents_api.py -k medio`:
       `POST /api/agents/medio/move` sobre tableros con amenaza de victoria
       propia, amenaza del rival, y ninguna de las dos, verificando la
@@ -136,26 +136,26 @@ backend/tests/contract/test_agents_api.py -k medio`
 
 ### Implementación para Agente Medio
 
-- [ ] T012 [US2] Implementar
+- [X] T012 [US2] Implementar
       `detectar_jugada_ganadora(estado: GameState, jugador: str) ->
       Jugada | None` en `backend/src/agents/shared.py`, usando
       `simular_jugada` (T003) y `comprobar_victoria` del motor (spec 001) —
       utilidad reutilizada también por el Agente Complejo (CA-A-03,
       CA-A-04, CA-A-08)
-- [ ] T013 [US2] Implementar `decidir_jugada(estado: GameState) -> Jugada`
+- [X] T013 [US2] Implementar `decidir_jugada(estado: GameState) -> Jugada`
       en `backend/src/agents/medium.py` aplicando en orden: victoria propia
       (CA-A-03) → bloqueo de victoria del rival (CA-A-04) → azar sobre
       `listar_jugadas_legales` (CA-A-05)
-- [ ] T014 [US2] Verificar y documentar en
+- [X] T014 [US2] Verificar y documentar en
       `backend/src/agents/medium.py` que la función no lee ni escribe
       ningún estado propio entre llamadas: toda la "memoria de la partida
       en curso" exigida por CA-A-06 queda satisfecha por el `GameState`
       completo recibido en cada solicitud (ver `research.md` Decisión 1)
-- [ ] T015 [US2] Conectar `POST /api/agents/medio/move` en
+- [X] T015 [US2] Conectar `POST /api/agents/medio/move` en
       `backend/src/api/agents.py` a `medium.decidir_jugada` (CA-A-03 a
       CA-A-06)
-- [ ] T016 [US2] Ejecutar `pytest backend/tests/unit/test_agent_medium.py
-      backend/tests/contract/test_agents_api.py -k medio` y confirmar que
+- [X] T016 [US2] Ejecutar `pytest backend/tests/unit/test_agent_medium.py
+      backend/tests/contract/test_agents_api.py` y confirmar que
       T010/T011 están en verde
 
 **Checkpoint**: Agentes Sencillo y Medio completamente funcionales y
@@ -174,7 +174,7 @@ backend/tests/integration/test_simple_vs_complex_100_games.py`
 
 ### Tests para Agente Complejo (escribir primero, deben fallar)
 
-- [ ] T017 [P] [US3] Test unitario en
+- [X] T017 [P] [US3] Test unitario en
       `backend/tests/unit/test_agent_complex.py`: sobre un conjunto
       representativo de tableros de modalidad clásica (incluyendo
       posiciones donde solo el empate es alcanzable ante juego óptimo
@@ -183,11 +183,11 @@ backend/tests/integration/test_simple_vs_complex_100_games.py`
       posición ya evaluada reutiliza el resultado memorizado en lugar de
       recalcularlo (CA-A-09, verificable p. ej. instrumentando/mockeando el
       contador de invocaciones a minimax)
-- [ ] T018 [P] [US3] Test de contrato en
+- [X] T018 [P] [US3] Test de contrato en
       `backend/tests/contract/test_agents_api.py -k complejo`:
       `POST /api/agents/complejo/move` responde 200 con una `Jugada` válida
       sobre distintos estados de modalidad clásica
-- [ ] T019 [P] [US3] Test de integración estadístico obligatorio en
+- [X] T019 [P] [US3] Test de integración estadístico obligatorio en
       `backend/tests/integration/test_simple_vs_complex_100_games.py`:
       simula 100 partidas completas en modalidad clásica entre el agente
       Sencillo y el agente Complejo (alternando quién inicia como X),
@@ -197,23 +197,35 @@ backend/tests/integration/test_simple_vs_complex_100_games.py`
 
 ### Implementación para Agente Complejo
 
-- [ ] T020 [US3] Implementar la representación canónica de `(board, turn)`
+- [X] T020 [US3] Implementar la representación canónica de `(board, turn)`
       como clave de caché en `backend/src/agents/complex.py` (base de
       CA-A-09)
-- [ ] T021 [US3] Implementar `minimax(estado: GameState, jugador: str) ->
+- [X] T021 [US3] Implementar `minimax(estado: GameState, jugador: str) ->
       tuple[Jugada, int]` con poda alfa-beta en `backend/src/agents/complex.py`,
       usando `listar_jugadas_legales` y `simular_jugada` (T002, T003),
       garantizando jugada óptima (victoria forzada si existe, empate en
       caso contrario) en modalidad clásica (CA-A-08)
-- [ ] T022 [US3] Añadir la caché de memoización
+
+      **Nota de implementación**: se usó negamax (formulación equivalente a
+      minimax de un solo parámetro, valor siempre relativo a `estado.turn`)
+      en lugar de una función `minimax(estado, jugador)` con parámetro de
+      jugador explícito. Se detectó que el motor deja `turn` sin alternar
+      tras una jugada ganadora (queda igual al ganador), lo que rompe la
+      suposición de "el turno siempre alterna" en la que se apoyaría una
+      memoización ingenua combinada con poda alfa-beta; la caché de
+      transposición (T022) requirió además distinguir valores exactos de
+      cotas (superior/inferior) para no reutilizar incorrectamente un valor
+      podado bajo una ventana alfa-beta distinta. Ver docstrings de
+      `complex.py` para el detalle.
+- [X] T022 [US3] Añadir la caché de memoización
       `memo: dict[str, tuple[Jugada, int]]` en `backend/src/agents/complex.py`,
       consultada antes de invocar `minimax` y actualizada tras cada
       evaluación nueva, persistente en memoria de proceso entre partidas
       (CA-A-09)
-- [ ] T023 [US3] Implementar `decidir_jugada(estado: GameState) -> Jugada`
+- [X] T023 [US3] Implementar `decidir_jugada(estado: GameState) -> Jugada`
       en `backend/src/agents/complex.py` como punto de entrada público que
       usa la caché (T022) y `minimax` (T021)
-- [ ] T024 [US3] Conectar `POST /api/agents/complejo/move` en
+- [X] T024 [US3] Conectar `POST /api/agents/complejo/move` en
       `backend/src/api/agents.py` a `complex.decidir_jugada` (CA-A-07,
       CA-A-08, CA-A-09)
 - [ ] T025 [US3] Ejecutar `pytest backend/tests/unit/test_agent_complex.py
