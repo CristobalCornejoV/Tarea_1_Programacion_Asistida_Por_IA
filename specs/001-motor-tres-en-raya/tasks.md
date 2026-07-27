@@ -57,7 +57,7 @@ necesitan
       `GameState`, `Jugada` (colocar/mover) y `ErrorJugada` en
       `backend/src/models/game_state.py`, exactamente según el esquema de
       `data-model.md` (base estructural para todo CA-M-01 a CA-M-15)
-- [ ] T005 [P] Implementar `comprobar_victoria(board)` evaluando las 8 líneas
+- [X] T005 [P] Implementar `comprobar_victoria(board)` evaluando las 8 líneas
       fijas (3 filas, 3 columnas, 2 diagonales) en
       `backend/src/engine/win_detection.py` (usado por CA-M-05, CA-M-06,
       CA-M-13)
