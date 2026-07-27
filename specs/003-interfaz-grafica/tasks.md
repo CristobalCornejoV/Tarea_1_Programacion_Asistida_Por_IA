@@ -364,6 +364,27 @@ escritorio sin scroll horizontal ni pérdida de estado al redimensionar
 
 ---
 
+## Phase 11: Integración Real y Resiliencia
+
+**Purpose**: Complementar las pruebas visuales controladas con recorridos
+contra el backend real y proteger las interacciones ante carreras o fallos
+de transporte.
+
+- [X] T045 [P] Verificar por contrato que FastAPI sirve `frontend/index.html`
+      desde `/` sin interferir con las rutas registradas bajo `/api/*`
+- [X] T046 Añadir `tests/e2e/test_ui_integration.py` con partidas clásicas
+      completas (victoria, empate, jugada ilegal, marcador y reinicio)
+      consumiendo el motor real (CA-I-05 a CA-I-08, CA-I-13 a CA-I-15)
+- [X] T047 Añadir recorridos E2E reales para modalidad continua, los tres
+      niveles de agente y el flujo completo por teclado (CA-I-09 a CA-I-12,
+      CA-I-16 a CA-I-18)
+- [X] T048 [P] Añadir regresiones de resiliencia para doble clic, fallo de
+      red visible, ausencia de errores JavaScript y conservación del foco
+- [X] T049 Ejecutar la suite completa y confirmar que las pruebas controladas
+      y las pruebas con backend real permanecen en verde
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -384,6 +405,8 @@ escritorio sin scroll horizontal ni pérdida de estado al redimensionar
   Configuración y una partida jugable para validar el layout en distintos
   anchos); es independiente de US3-US6, ya que solo modifica CSS
 - **Polish (Phase 10)**: Depende de que todas las historias estén completas
+- **Integración Real (Phase 11)**: Depende de Polish; no reemplaza los tests
+  con respuestas controladas, los complementa contra FastAPI real
 
 ### Parallel Opportunities
 
@@ -391,6 +414,7 @@ escritorio sin scroll horizontal ni pérdida de estado al redimensionar
 - T004 y T005 en paralelo dentro de Foundational
 - T035, T036 y T037 en paralelo dentro de US7 (tests)
 - T043 y T044 en paralelo dentro de Polish
+- T045 y T048 en paralelo dentro de Integración Real
 
 ---
 
@@ -426,3 +450,4 @@ Task: "Test e2e de partida completa en tests/e2e/test_ui_flows.py::test_jugar_pa
 7. US7 → añade diseño responsive (móvil/tablet/escritorio)
 8. Polish → validación manual final y revisión de separación de
    responsabilidades
+9. Integración Real → valida el ensamble UI/backend y endurece interacciones

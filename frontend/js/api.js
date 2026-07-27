@@ -1,46 +1,63 @@
-// Cliente fetch hacia /api/games y /api/agents (specs 001/002).
-// Único módulo que conoce URLs y forma de las peticiones HTTP; el resto de
-// la interfaz solo lee los objetos devueltos (GameState, Jugada, error).
+/**
+ * Único punto de contacto de la interfaz con el backend.
+ *
+ * Este módulo no interpreta reglas: envía solicitudes y devuelve las
+ * representaciones completas entregadas por los contratos HTTP.
+ */
 
-async function _enviar(url, opciones) {
-  const respuesta = await fetch(url, opciones);
-  const cuerpo = await respuesta.json();
-  return { ok: respuesta.ok, status: respuesta.status, body: cuerpo };
+export class ErrorAPI extends Error {
+  constructor(status, data) {
+    super(data?.message ?? data?.detail ?? "No fue posible completar la solicitud.");
+    this.name = "ErrorAPI";
+    this.status = status;
+    this.data = data;
+    this.codigo = data?.error ?? null;
+  }
 }
 
-function _post(url, datos) {
-  return _enviar(url, {
+async function solicitar(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    throw new ErrorAPI(response.status, data);
+  }
+
+  return data;
+}
+
+export function crearPartida(mode) {
+  return solicitar("/api/games", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(datos),
+    body: JSON.stringify({ mode }),
   });
 }
 
-/** Crea una partida nueva. `modalidad`: "clasica" | "continua". */
-export function crearPartida(modalidad) {
-  return _post("/api/games", { mode: modalidad });
-}
-
-/** Consulta el GameState actual de una partida existente. */
 export function obtenerPartida(gameId) {
-  return _enviar(`/api/games/${gameId}`, { method: "GET" });
+  return solicitar(`/api/games/${encodeURIComponent(gameId)}`);
 }
 
-/**
- * Aplica una jugada. `jugada` es {player, type, to, from?}. En 200 el body
- * es el nuevo GameState; en 422 el body es {error, message} y el estado de
- * la partida no cambió (ver contracts/games-api.md).
- */
 export function aplicarJugada(gameId, jugada) {
-  return _post(`/api/games/${gameId}/moves`, jugada);
+  return solicitar(`/api/games/${encodeURIComponent(gameId)}/moves`, {
+    method: "POST",
+    body: JSON.stringify(jugada),
+  });
 }
 
-/**
- * Pide la jugada de un agente. `nivel`: "sencillo" | "medio" | "complejo".
- * `solicitud` es el subconjunto de GameState que exige agents-api.md
- * (board, mode, phase, turn, fichas_disponibles). El body de respuesta es
- * {type, to, from?} (sin `player`, ver data-model.md de la spec 002).
- */
 export function obtenerJugadaAgente(nivel, solicitud) {
-  return _post(`/api/agents/${nivel}/move`, solicitud);
+  return solicitar(`/api/agents/${encodeURIComponent(nivel)}/move`, {
+    method: "POST",
+    body: JSON.stringify(solicitud),
+  });
 }

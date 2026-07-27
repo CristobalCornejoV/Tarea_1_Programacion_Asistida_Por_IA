@@ -1,437 +1,610 @@
-"""Tests e2e de la interfaz gráfica (Pytest + Playwright, ver research.md
-Decisión 4). Cada función cubre uno o más CA-I-* de spec.md.
-"""
+"""Flujos críticos de la interfaz definidos por CA-I-01 a CA-I-18."""
 
-from playwright.sync_api import expect
+from __future__ import annotations
+
+import json
+import re
+
+import pytest
+
+playwright = pytest.importorskip(
+    "playwright.sync_api",
+    reason="pytest-playwright es una dependencia opcional de pruebas E2E",
+)
+Page = playwright.Page
+expect = playwright.expect
 
 
-def _esperar_pantalla(page, pantalla: str) -> None:
-    """Espera a que EstadoUI.pantalla transicione (llamadas fetch async)."""
-    page.wait_for_function(
-        "(p) => document.getElementById('pantalla-' + p).hidden === false",
-        arg=pantalla,
+def _game_state(
+    *,
+    game_id: str = "game-e2e",
+    mode: str = "clasica",
+    board: list[list[str | None]] | None = None,
+    turn: str = "X",
+    phase: str | None = None,
+    fichas_disponibles: dict[str, int] | None = None,
+    status: str = "en_curso",
+    winner: str | None = None,
+    winning_line: list[dict[str, int]] | None = None,
+) -> dict:
+    return {
+        "game_id": game_id,
+        "mode": mode,
+        "board": board or [[None, None, None] for _ in range(3)],
+        "turn": turn,
+        "phase": phase,
+        "fichas_disponibles": fichas_disponibles,
+        "status": status,
+        "winner": winner,
+        "winning_line": winning_line,
+    }
+
+
+def _fulfill_json(route, payload: dict, status: int = 200) -> None:
+    route.fulfill(
+        status=status,
+        content_type="application/json",
+        body=json.dumps(payload),
     )
 
 
-def _iniciar_partida(
-    page,
-    base_url,
-    modo="humano_vs_humano",
-    ficha_jugador_1="X",
-    modalidad="clasica",
-    nivel_agente=None,
-):
-    """Navega, completa Configuración, confirma, y espera a salir de ella."""
-    page.goto(base_url + "/")
-    page.check(f'input[name="modo"][value="{modo}"]')
-    if modo == "humano_vs_agente":
-        page.select_option("#nivel_agente", nivel_agente)
-    page.check(f'input[name="ficha_jugador_1"][value="{ficha_jugador_1}"]')
-    page.check(f'input[name="modalidad"][value="{modalidad}"]')
-    page.click("#btn-iniciar")
-    page.wait_for_function(
-        "() => document.getElementById('pantalla-configuracion').hidden === true"
+def _select_human_game(page: Page, variant: str = "Clásica") -> None:
+    page.get_by_label("Humano vs Humano").check()
+    page.get_by_label("Jugador 1 usa X").check()
+    page.get_by_label(variant).check()
+    page.get_by_role("button", name="Iniciar partida").click()
+
+
+def test_configuracion_inicial(page: Page, live_server_url: str) -> None:
+    """CA-I-01 a CA-I-04: configuración inicial, completa e incompleta."""
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, _game_state(), status=201),
     )
+    page.goto(live_server_url)
+
+    expect(page.locator("#config-screen")).to_be_visible()
+    expect(page.locator("#game-screen")).to_be_hidden()
+    expect(page.locator('input[name="modo"]')).to_have_count(2)
+    expect(page.locator('input[name="ficha_jugador_1"]')).to_have_count(2)
+    expect(page.locator('input[name="modalidad"]')).to_have_count(2)
+
+    page.get_by_role("button", name="Iniciar partida").click()
+    expect(page.locator("#config-error-summary")).to_be_visible()
+    expect(page.locator("#config-screen")).to_be_visible()
+    expect(page.locator("[data-config-field].has-error")).to_have_count(3)
+
+    page.get_by_label("Humano vs Agente").check()
+    expect(page.locator("#agent-level-group")).to_be_visible()
+    expect(page.locator('input[name="nivel_agente"]')).to_have_count(3)
+    page.get_by_label("Medio").check()
+    page.get_by_label("Jugador 1 usa X").check()
+    page.get_by_label("Clásica").check()
+    page.get_by_role("button", name="Iniciar partida").click()
+
+    expect(page.locator("#config-screen")).to_be_hidden()
+    expect(page.locator("#game-screen")).to_be_visible()
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#fact-mode")).to_have_text("Humano vs Agente")
+    expect(page.locator("#fact-level")).to_have_text("Medio")
 
 
-def _celda(page, fila: int, col: int):
-    """Localiza la casilla (fila, col) en la pantalla actualmente visible.
+def test_jugar_partida(page: Page, live_server_url: str) -> None:
+    """CA-I-05 a CA-I-08: turno, error, victoria, empate y bloqueo."""
 
-    Cada pantalla (en_juego/esperando_agente/terminada) tiene su propia
-    copia del tablero, repintada solo mientras está activa; usar `:visible`
-    en vez de fijar un `#pantalla-*` evita apuntar a una copia obsoleta
-    justo cuando una jugada transiciona de pantalla (p. ej. la jugada que
-    termina la partida).
-    """
-    return page.locator(f".casilla[data-row='{fila}'][data-col='{col}']:visible")
-
-
-def _jugar_casilla(page, fila: int, col: int, valor_esperado: str):
-    """Clica una casilla y espera (auto-retry) a que refleje la ficha
-    colocada, evitando la condición de carrera del fetch asíncrono."""
-    _celda(page, fila, col).click()
-    expect(_celda(page, fila, col)).to_have_text(valor_esperado)
-
-
-def test_arnes_e2e_sirve_la_pagina(page, base_url):
-    """T003: el servidor real arranca y sirve frontend/index.html."""
-    page.goto(base_url + "/")
-    assert page.title() == "Tres en Raya"
-
-
-def test_esqueleto_carga_sin_errores_y_solo_configuracion_visible(page, base_url):
-    """T006: las 4 secciones de pantalla existen; solo Configuración parte
-    visible (EstadoUI.pantalla inicial), sin errores de consola/JS."""
-    errores = []
-    page.on("console", lambda msg: errores.append(msg.text) if msg.type == "error" else None)
-    page.on("pageerror", lambda exc: errores.append(str(exc)))
-
-    page.goto(base_url + "/")
-
-    assert page.locator("#pantalla-configuracion").count() == 1
-    assert page.locator("#pantalla-configuracion").get_attribute("hidden") is None
-    for pantalla in ("en_juego", "esperando_agente", "terminada"):
-        assert page.locator(f"#pantalla-{pantalla}").get_attribute("hidden") is not None
-
-    assert errores == []
-
-
-def test_configuracion_inicial(page, base_url):
-    """T007: cubre CA-I-01 a CA-I-04."""
-    page.goto(base_url + "/")
-
-    # CA-I-01: Configuración es la pantalla inicial.
-    assert page.locator("#pantalla-configuracion").get_attribute("hidden") is None
-
-    # CA-I-04: confirmar sin ninguna selección se rechaza, sin salir de
-    # Configuración, e indica qué falta.
-    page.click("#btn-iniciar")
-    assert page.locator("#pantalla-configuracion").get_attribute("hidden") is None
-    assert page.locator("#pantalla-en_juego").get_attribute("hidden") is not None
-    assert page.locator("#config-error").inner_text().strip() != ""
-
-    # CA-I-02: elegir modo Humano vs Agente muestra el selector de nivel.
-    assert page.locator("#grupo-nivel-agente").get_attribute("hidden") is not None
-    page.check('input[name="modo"][value="humano_vs_agente"]')
-    assert page.locator("#grupo-nivel-agente").get_attribute("hidden") is None
-
-    # CA-I-04 (parcial): sin nivel de agente todavía, sigue rechazando.
-    page.check('input[name="ficha_jugador_1"][value="X"]')
-    page.check('input[name="modalidad"][value="clasica"]')
-    page.click("#btn-iniciar")
-    assert page.locator("#pantalla-configuracion").get_attribute("hidden") is None
-    assert "nivel del agente" in page.locator("#config-error").inner_text()
-
-    # CA-I-02 + CA-I-03: selección completa confirma y transiciona a En Juego.
-    page.select_option("#nivel_agente", "medio")
-    page.click("#btn-iniciar")
-    _esperar_pantalla(page, "en_juego")
-    assert page.locator("#pantalla-configuracion").get_attribute("hidden") is not None
-
-
-def test_configuracion_humano_vs_humano_no_requiere_nivel_agente(page, base_url):
-    """CA-I-02, CA-I-03: en modo Humano vs Humano no se exige nivel_agente."""
-    page.goto(base_url + "/")
-
-    page.check('input[name="modo"][value="humano_vs_humano"]')
-    assert page.locator("#grupo-nivel-agente").get_attribute("hidden") is not None
-
-    page.check('input[name="ficha_jugador_1"][value="O"]')
-    page.check('input[name="modalidad"][value="continua"]')
-    page.click("#btn-iniciar")
-
-    _esperar_pantalla(page, "en_juego")
-    assert page.locator("#pantalla-configuracion").get_attribute("hidden") is not None
-
-
-def test_jugar_partida(page, base_url):
-    """T012: cubre CA-I-05 a CA-I-08 (modo Humano vs Humano, clásica)."""
-    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
-
-    # CA-I-05: turno y ficha visibles.
-    expect(page.locator("#pantalla-en_juego #indicador-turno")).to_contain_text("X")
-
-    # X gana la fila superior: X,O,X,O,X.
-    secuencia = [(0, 0, "X"), (1, 0, "O"), (0, 1, "X"), (1, 1, "O"), (0, 2, "X")]
-    for fila, col, ficha in secuencia:
-        _jugar_casilla(page, fila, col, ficha)
-
-    # CA-I-06: línea ganadora resaltada y tablero bloqueado; transiciona a
-    # Terminada (renderizada dentro de #pantalla-terminada).
-    _esperar_pantalla(page, "terminada")
-    expect(page.locator("#pantalla-terminada #resultado-partida")).to_contain_text("X")
-    for fila, col in [(0, 0), (0, 1), (0, 2)]:
-        expect(_celda(page, fila, col)).to_have_class("casilla casilla-ganadora")
-        expect(_celda(page, fila, col)).to_be_disabled()
-
-
-def test_jugar_partida_hasta_empate(page, base_url):
-    """T012: CA-I-07 (empate resalta resultado y bloquea el tablero)."""
-    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
-
-    # Tablero final sin alineación: X O X / X X O / O X O.
-    secuencia = [
-        (0, 0, "X"), (0, 1, "O"), (0, 2, "X"),
-        (1, 2, "O"), (1, 0, "X"), (2, 0, "O"),
-        (1, 1, "X"), (2, 2, "O"), (2, 1, "X"),
+    initial = _game_state()
+    move_responses = [
+        _game_state(
+            board=[["X", None, None], [None, None, None], [None, None, None]],
+            turn="O",
+        ),
+        {
+            "error": "casilla_ocupada",
+            "message": "La casilla ya está ocupada.",
+            "_status": 422,
+        },
+        _game_state(
+            board=[["X", None, None], ["O", None, None], [None, None, None]],
+            turn="X",
+        ),
+        _game_state(
+            board=[["X", "X", None], ["O", None, None], [None, None, None]],
+            turn="O",
+        ),
+        _game_state(
+            board=[["X", "X", None], ["O", "O", None], [None, None, None]],
+            turn="X",
+        ),
+        _game_state(
+            board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+            turn="X",
+            status="victoria",
+            winner="X",
+            winning_line=[
+                {"row": 0, "col": 0},
+                {"row": 0, "col": 1},
+                {"row": 0, "col": 2},
+            ],
+        ),
     ]
-    for fila, col, ficha in secuencia:
-        _jugar_casilla(page, fila, col, ficha)
 
-    _esperar_pantalla(page, "terminada")
-    expect(page.locator("#pantalla-terminada #resultado-partida")).to_contain_text("Empate")
-    expect(_celda(page, 0, 0)).to_be_disabled()
-
-
-def test_jugar_partida_rechaza_jugada_ilegal(page, base_url):
-    """T012: CA-I-08 (casilla ocupada no altera el tablero)."""
-    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
-
-    _jugar_casilla(page, 0, 0, "X")
-    # O intenta jugar sobre la misma casilla ya ocupada por X.
-    _celda(page, 0, 0).click()
-
-    expect(page.locator("#pantalla-en_juego #tablero-error")).not_to_have_text("")
-    # El estado no cambió: sigue mostrando X y el turno sigue siendo O.
-    expect(_celda(page, 0, 0)).to_have_text("X")
-    expect(page.locator("#pantalla-en_juego #indicador-turno")).to_contain_text("O")
-
-
-def test_espera_agente(page, base_url):
-    """T017: cubre CA-I-09, CA-I-10.
-
-    Se retrasa artificialmente la respuesta del agente porque en
-    condiciones normales responde en unos pocos milisegundos: sin el
-    retraso, el estado "esperando_agente" podría resolverse antes de que
-    Playwright llegue a comprobarlo.
-
-    El retraso se implementa envolviendo `window.fetch` en el propio
-    navegador (`add_init_script`), no interceptando la petición de red
-    desde Python (`page.route`): un `time.sleep()` dentro de un handler de
-    `page.route()` bloquea el hilo de despacho síncrono de Playwright y
-    termina dejando pasar la petición sin ningún retraso real (bug
-    detectado al escribir este test — ver commit).
-    """
-    page.add_init_script(
-        """
-        const _fetchOriginal = window.fetch;
-        window.fetch = function(...args) {
-          const url = args[0];
-          if (typeof url === "string" && url.includes("/api/agents/")) {
-            return new Promise((resolve) => setTimeout(resolve, 300))
-              .then(() => _fetchOriginal.apply(window, args));
-          }
-          return _fetchOriginal.apply(window, args);
-        };
-        """
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, initial, status=201),
     )
 
-    _iniciar_partida(
-        page, base_url, modo="humano_vs_agente", ficha_jugador_1="X", nivel_agente="sencillo"
-    )
-    _jugar_casilla(page, 0, 0, "X")  # turno de X; le sigue el agente (O)
+    def handle_move(route) -> None:
+        response = move_responses.pop(0)
+        status = response.pop("_status", 200)
+        _fulfill_json(route, response, status=status)
 
-    # CA-I-09: indicación de espera visible y tablero deshabilitado.
-    _esperar_pantalla(page, "esperando_agente")
-    expect(page.locator("#pantalla-esperando_agente #indicador-espera-agente")).to_be_visible()
-    expect(_celda(page, 1, 1)).to_be_disabled()
+    page.route("**/api/games/*/moves", handle_move)
+    page.goto(live_server_url)
+    _select_human_game(page)
 
-    # CA-I-10: al recibir la jugada del agente, se oculta la espera y se
-    # retorna a En Juego o Terminada con la jugada ya aplicada.
-    page.wait_for_function(
-        "() => document.getElementById('pantalla-esperando_agente').hidden === true"
-    )
-    en_terminada = page.locator("#pantalla-terminada").get_attribute("hidden") is None
-    en_juego = page.locator("#pantalla-en_juego").get_attribute("hidden") is None
-    assert en_terminada or en_juego
+    expect(page.locator("#turn-player")).to_contain_text("Jugador 1")
+    expect(page.locator("#turn-detail")).to_contain_text("ficha X")
 
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#turn-player")).to_contain_text("Jugador 2")
+    expect(page.locator("#turn-detail")).to_contain_text("ficha O")
 
-def test_modalidad_continua_movimiento(page, base_url):
-    """T021: cubre CA-I-11, CA-I-12 (modo Humano vs Humano, continua)."""
-    _iniciar_partida(
-        page, base_url, modo="humano_vs_humano", ficha_jugador_1="X", modalidad="continua"
-    )
+    board_before_error = page.locator("#board").inner_text()
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#game-notice")).to_contain_text("ocupada")
+    expect(page.locator("#board")).to_have_text(board_before_error)
+    expect(page.locator("#turn-detail")).to_contain_text("ficha O")
 
-    # Fase de colocación: X en (0,0),(0,1),(1,0); O en (2,2),(2,1),(1,2).
-    colocaciones = [
-        (0, 0, "X"), (2, 2, "O"), (0, 1, "X"),
-        (2, 1, "O"), (1, 0, "X"), (1, 2, "O"),
+    for cell_id in ("#cell-1-0", "#cell-0-1", "#cell-1-1", "#cell-0-2"):
+        page.locator(cell_id).click()
+
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
+    expect(page.locator(".board-cell.is-winning")).to_have_count(3)
+    expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
+    expect(page.locator("#result-title")).to_have_text("Victoria de X")
+
+    draw_states = [
+        _game_state(
+            game_id="draw-e2e",
+            board=[
+                ["X", "O", "X"],
+                ["X", "O", "O"],
+                ["O", "X", "X"],
+            ],
+            turn="O",
+            status="empate",
+        )
     ]
-    for fila, col, ficha in colocaciones:
-        _jugar_casilla(page, fila, col, ficha)
+    move_responses.extend(draw_states)
+    initial["game_id"] = "draw-e2e"
+    page.reload()
+    _select_human_game(page)
+    page.locator("#cell-0-0").click()
 
-    # CA-I-11: en fase de movimiento, turno de X: sus 3 fichas propias
-    # quedan señaladas como movibles; las de O no.
-    for fila, col in [(0, 0), (0, 1), (1, 0)]:
-        expect(_celda(page, fila, col)).to_have_class("casilla casilla-movible")
-    for fila, col in [(2, 2), (2, 1), (1, 2)]:
-        expect(_celda(page, fila, col)).to_have_class("casilla")
-
-    # Selecciona una ficha movible.
-    _celda(page, 0, 0).click()
-    expect(_celda(page, 0, 0)).to_have_class("casilla casilla-movible casilla-seleccionada")
-
-    # CA-I-12: las 3 casillas vacías quedan señaladas como destino válido.
-    for fila, col in [(0, 2), (1, 1), (2, 0)]:
-        expect(_celda(page, fila, col)).to_have_class("casilla casilla-destino")
-
-    # Mueve a una casilla no adyacente: CA-M-11 del motor ya lo permite.
-    _celda(page, 2, 0).click()
-    expect(_celda(page, 2, 0)).to_have_text("X")
-    expect(_celda(page, 0, 0)).to_have_text("")
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
+    expect(page.locator("#result-title")).to_have_text("Empate")
+    expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
 
 
-def test_marcador_y_reinicio(page, base_url):
-    """T025: cubre CA-I-13 a CA-I-15."""
-    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
+def test_espera_agente(page: Page, live_server_url: str) -> None:
+    """CA-I-09 y CA-I-10: espera bloqueada y aplicación de jugada del agente."""
 
-    secuencia_victoria = [(0, 0, "X"), (1, 0, "O"), (0, 1, "X"), (1, 1, "O"), (0, 2, "X")]
-    for fila, col, ficha in secuencia_victoria:
-        _jugar_casilla(page, fila, col, ficha)
-    _esperar_pantalla(page, "terminada")
+    initial = _game_state()
+    after_human = _game_state(
+        board=[["X", None, None], [None, None, None], [None, None, None]],
+        turn="O",
+    )
+    after_agent = _game_state(
+        board=[["X", None, None], [None, "O", None], [None, None, None]],
+        turn="X",
+    )
+    engine_responses = [after_human, after_agent]
+    pending_agent_routes = []
 
-    # CA-I-13, CA-I-14: el marcador acumula la victoria de X.
-    expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
-    expect(page.locator("#marcador-victorias-o")).to_contain_text("0")
-    expect(page.locator("#marcador-empates")).to_contain_text("0")
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, initial, status=201),
+    )
+    page.route(
+        "**/api/games/*/moves",
+        lambda route: _fulfill_json(route, engine_responses.pop(0)),
+    )
+    page.route(
+        "**/api/agents/medio/move",
+        lambda route: pending_agent_routes.append(route),
+    )
+    page.goto(live_server_url)
 
-    # CA-I-15: reiniciar arranca una partida nueva con la misma
-    # configuración y conserva el marcador.
-    page.click("#btn-reiniciar")
-    _esperar_pantalla(page, "en_juego")
-    expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
-    expect(page.locator("#pantalla-en_juego #indicador-turno")).to_contain_text("X")
+    page.get_by_label("Humano vs Agente").check()
+    page.get_by_label("Medio").check()
+    page.get_by_label("Jugador 1 usa X").check()
+    page.get_by_label("Clásica").check()
+    page.get_by_role("button", name="Iniciar partida").click()
+    with page.expect_request("**/api/agents/medio/move") as agent_request_info:
+        page.locator("#cell-0-0").click()
 
-    secuencia_empate = [
-        (0, 0, "X"), (0, 1, "O"), (0, 2, "X"),
-        (1, 2, "O"), (1, 0, "X"), (2, 0, "O"),
-        (1, 1, "X"), (2, 2, "O"), (2, 1, "X"),
+    expect(page.locator("#app")).to_have_attribute(
+        "data-ui-state", "esperando_agente"
+    )
+    expect(page.locator("#agent-wait")).to_be_visible()
+    expect(page.locator('.board-cell[aria-disabled="true"]')).to_have_count(9)
+    expect(page.locator("#cell-1-1")).to_be_empty()
+
+    assert len(pending_agent_routes) == 1
+    agent_request = agent_request_info.value.post_data_json
+    assert set(agent_request) == {
+        "board",
+        "mode",
+        "phase",
+        "turn",
+        "fichas_disponibles",
+    }
+    _fulfill_json(
+        pending_agent_routes.pop(),
+        {"type": "colocar", "to": {"row": 1, "col": 1}},
+    )
+
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#agent-wait")).to_be_hidden()
+    expect(page.locator("#cell-1-1")).to_have_text("O")
+    expect(page.locator("#turn-detail")).to_contain_text("ficha X")
+
+
+def test_modalidad_continua_movimiento(
+    page: Page, live_server_url: str
+) -> None:
+    """CA-I-11 y CA-I-12: fichas movibles y destinos disponibles."""
+
+    movement_state = _game_state(
+        mode="continua",
+        phase="movimiento",
+        board=[
+            ["X", "O", "X"],
+            ["O", "X", "O"],
+            [None, None, None],
+        ],
+        turn="X",
+    )
+    after_move = _game_state(
+        mode="continua",
+        phase="movimiento",
+        board=[
+            [None, "O", "X"],
+            ["O", "X", "O"],
+            [None, None, "X"],
+        ],
+        turn="O",
+    )
+    captured_moves = []
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, movement_state, status=201),
+    )
+
+    def handle_move(route) -> None:
+        captured_moves.append(route.request.post_data_json)
+        _fulfill_json(route, after_move)
+
+    page.route("**/api/games/*/moves", handle_move)
+    page.goto(live_server_url)
+    _select_human_game(page, variant="Continua")
+
+    expect(page.locator("#movement-help")).to_be_visible()
+    expect(page.locator(".board-cell.is-movable")).to_have_count(3)
+    expect(page.locator(".board-cell.is-destination")).to_have_count(0)
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#cell-0-0")).to_have_class(
+        re.compile(r"\bis-selected\b")
+    )
+    expect(page.locator(".board-cell.is-destination")).to_have_count(3)
+    page.locator("#cell-2-2").click()
+
+    expect(page.locator("#cell-2-2")).to_have_text("X")
+    expect(page.locator(".board-cell.is-selected")).to_have_count(0)
+    assert captured_moves == [
+        {
+            "player": "X",
+            "type": "mover",
+            "from": {"row": 0, "col": 0},
+            "to": {"row": 2, "col": 2},
+        }
     ]
-    for fila, col, ficha in secuencia_empate:
-        _jugar_casilla(page, fila, col, ficha)
-    _esperar_pantalla(page, "terminada")
-
-    # El marcador acumula ambos resultados (no se reinició al reiniciar).
-    expect(page.locator("#marcador-victorias-x")).to_contain_text("1")
-    expect(page.locator("#marcador-empates")).to_contain_text("1")
 
 
-def test_operacion_por_teclado(page, base_url):
-    """T029: cubre CA-I-16 a CA-I-18 (Requisito Excelente).
+def test_marcador_y_reinicio(page: Page, live_server_url: str) -> None:
+    """CA-I-13 a CA-I-15: marcador global, acumulación y reinicio."""
 
-    Configuración se opera enfocando cada control y activándolo con
-    Espacio/Enter (los radios/botones nativos ya son accesibles por
-    teclado, ver research.md Decisión 2); la navegación por el tablero
-    usa flechas + Enter/Espacio, que sí es lógica propia (keyboard.js).
-    """
-    page.goto(base_url + "/")
+    new_games = [
+        _game_state(game_id="score-game-1"),
+        _game_state(game_id="score-game-2"),
+    ]
+    final_states = [
+        _game_state(
+            game_id="score-game-1",
+            board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+            status="victoria",
+            winner="X",
+            winning_line=[
+                {"row": 0, "col": 0},
+                {"row": 0, "col": 1},
+                {"row": 0, "col": 2},
+            ],
+        ),
+        _game_state(
+            game_id="score-game-2",
+            board=[
+                ["X", "O", "X"],
+                ["X", "O", "O"],
+                ["O", "X", "X"],
+            ],
+            status="empate",
+        ),
+    ]
 
-    page.locator('input[name="modo"][value="humano_vs_humano"]').focus()
-    page.keyboard.press(" ")
-    page.locator('input[name="ficha_jugador_1"][value="X"]').focus()
-    page.keyboard.press(" ")
-    page.locator('input[name="modalidad"][value="clasica"]').focus()
-    page.keyboard.press(" ")
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, new_games.pop(0), status=201),
+    )
+    page.route(
+        "**/api/games/*/moves",
+        lambda route: _fulfill_json(route, final_states.pop(0)),
+    )
+    page.goto(live_server_url)
 
-    page.locator("#btn-iniciar").focus()
-    expect(page.locator("#btn-iniciar")).to_be_focused()  # CA-I-17
+    expect(page.locator(".scoreboard")).to_be_visible()
+    expect(page.locator("#score-x")).to_have_text("0")
+    _select_human_game(page)
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#score-x")).to_have_text("1")
+    expect(page.locator("#score-draws")).to_have_text("0")
+
+    page.get_by_role("button", name="Reiniciar partida").click()
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator(".board-cell")).to_have_text([""] * 9)
+    expect(page.locator("#fact-mode")).to_have_text("Humano vs Humano")
+    expect(page.locator("#fact-variant")).to_have_text("Clásica")
+    expect(page.locator("#score-x")).to_have_text("1")
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#score-draws")).to_have_text("1")
+    page.get_by_role("button", name="Cambiar configuración").click()
+    expect(page.locator("#config-screen")).to_be_visible()
+    expect(page.locator("#score-x")).to_have_text("1")
+    expect(page.locator("#score-draws")).to_have_text("1")
+
+
+def test_operacion_por_teclado(page: Page, live_server_url: str) -> None:
+    """CA-I-16 a CA-I-18: flujo completo y bloqueo mediante teclado."""
+
+    new_games = [
+        _game_state(game_id="keyboard-game-1"),
+        _game_state(game_id="keyboard-game-2"),
+    ]
+    move_requests = []
+    move_responses = [
+        {
+            "error": "casilla_ocupada",
+            "message": "La casilla seleccionada está ocupada.",
+            "_status": 422,
+        },
+        _game_state(
+            game_id="keyboard-game-1",
+            board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+            status="victoria",
+            winner="X",
+            winning_line=[
+                {"row": 0, "col": 0},
+                {"row": 0, "col": 1},
+                {"row": 0, "col": 2},
+            ],
+        ),
+    ]
+
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, new_games.pop(0), status=201),
+    )
+
+    def handle_move(route) -> None:
+        move_requests.append(route.request.post_data_json)
+        response = move_responses.pop(0)
+        status = response.pop("_status", 200)
+        _fulfill_json(route, response, status=status)
+
+    page.route("**/api/games/*/moves", handle_move)
+    page.goto(live_server_url)
+
+    page.keyboard.press("Tab")
+    expect(page.locator(".skip-link")).to_be_focused()
+    page.keyboard.press("Tab")
+    expect(page.locator('input[name="modo"][value="humano_vs_humano"]')).to_be_focused()
+    page.keyboard.press("Space")
+    page.keyboard.press("Tab")
+    expect(page.locator('input[name="ficha_jugador_1"][value="X"]')).to_be_focused()
+    page.keyboard.press("Space")
+    page.keyboard.press("Tab")
+    expect(page.locator('input[name="modalidad"][value="clasica"]')).to_be_focused()
+    page.keyboard.press("Space")
+    page.keyboard.press("Tab")
+    expect(page.locator("#start-game")).to_be_focused()
     page.keyboard.press("Enter")
-    page.wait_for_function(
-        "() => document.getElementById('pantalla-configuracion').hidden === true"
+
+    expect(page.locator("#game-screen")).to_be_visible()
+    page.keyboard.press("Tab")
+    expect(page.locator("#change-config")).to_be_focused()
+    page.keyboard.press("Tab")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+    assert page.locator("#cell-0-0").evaluate(
+        "(element) => getComputedStyle(element).outlineStyle !== 'none'"
     )
 
-    # X: enfocar (0,0) directamente y confirmar con Enter.
-    _celda(page, 0, 0).focus()
-    expect(_celda(page, 0, 0)).to_be_focused()  # CA-I-17
-    page.keyboard.press("Enter")
-    expect(_celda(page, 0, 0)).to_have_text("X")
-
-    # El foco se conserva tras redibujar el tablero (mismo elemento lógico).
-    expect(_celda(page, 0, 0)).to_be_focused()
-
-    # O: mover el foco con flechas hasta (1,0) y confirmar con Espacio.
-    page.keyboard.press("ArrowDown")
-    expect(_celda(page, 1, 0)).to_be_focused()
-    page.keyboard.press(" ")
-    expect(_celda(page, 1, 0)).to_have_text("O")
-
-    # X: flechas hasta (0,1) y Enter.
+    page.keyboard.press("ArrowLeft")
     page.keyboard.press("ArrowUp")
+    expect(page.locator("#cell-0-0")).to_be_focused()
     page.keyboard.press("ArrowRight")
-    expect(_celda(page, 0, 1)).to_be_focused()
-    page.keyboard.press("Enter")
-    expect(_celda(page, 0, 1)).to_have_text("X")
-
-    # O: flechas hasta (1,1) y Espacio.
+    expect(page.locator("#cell-0-1")).to_be_focused()
     page.keyboard.press("ArrowDown")
-    expect(_celda(page, 1, 1)).to_be_focused()
-    page.keyboard.press(" ")
-    expect(_celda(page, 1, 1)).to_have_text("O")
-
-    # X: flechas hasta (0,2) y Enter -> completa la fila superior, gana X.
+    expect(page.locator("#cell-1-1")).to_be_focused()
+    page.keyboard.press("ArrowLeft")
     page.keyboard.press("ArrowUp")
-    page.keyboard.press("ArrowRight")
-    expect(_celda(page, 0, 2)).to_be_focused()
+    expect(page.locator("#cell-0-0")).to_be_focused()
+
+    page.keyboard.press("Space")
+    expect(page.locator("#game-notice")).to_contain_text("ocupada")
+    expect(page.locator("#cell-0-0")).to_be_focused()
     page.keyboard.press("Enter")
-    _esperar_pantalla(page, "terminada")
-    expect(page.locator("#pantalla-terminada #resultado-partida")).to_contain_text("X")
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "terminada")
+    expect(page.locator("#cell-0-0")).to_be_focused()
 
-    # CA-I-18: una entrada de teclado sobre una casilla deshabilitada
-    # (tablero ya terminado) se ignora sin alterar el tablero. Se dispara
-    # el evento directamente sobre el elemento (en vez de confiar en que
-    # el navegador impida enfocar un <button disabled>) para probar de
-    # forma precisa la guarda de keyboard.js, no solo el comportamiento
-    # nativo del navegador.
-    resultado = page.evaluate(
-        """() => {
-            const celda = document.querySelector(
-                '.casilla[data-row="0"][data-col="0"]:not([hidden])'
-            );
-            const antes = celda.textContent;
-            const evento = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
-            celda.dispatchEvent(evento);
-            return { antes, despues: celda.textContent };
-        }"""
-    )
-    assert resultado["antes"] == resultado["despues"]
+    requests_before_blocked_input = len(move_requests)
+    page.keyboard.press("Space")
+    expect(page.locator("#cell-0-0")).to_be_focused()
+    assert len(move_requests) == requests_before_blocked_input
 
-    # Reiniciar también es operable por teclado (botón nativo).
-    page.locator("#btn-reiniciar").focus()
-    expect(page.locator("#btn-reiniciar")).to_be_focused()  # CA-I-17
+    page.keyboard.press("Tab")
+    expect(page.locator("#restart-game")).to_be_focused()
     page.keyboard.press("Enter")
-    _esperar_pantalla(page, "en_juego")
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#score-x")).to_have_text("1")
 
 
-_ANCHOS_DE_REFERENCIA = [375, 768, 1440]  # móvil, tablet, escritorio
-
-
-def _sin_scroll_horizontal(page) -> bool:
-    return page.evaluate(
-        "() => document.documentElement.scrollWidth <= window.innerWidth + 1"
+def _assert_no_horizontal_scroll(page: Page) -> None:
+    metrics = page.evaluate(
+        """() => ({
+            viewport: document.documentElement.clientWidth,
+            document: document.documentElement.scrollWidth,
+            body: document.body.scrollWidth,
+        })"""
     )
+    assert metrics["document"] <= metrics["viewport"] + 1
+    assert metrics["body"] <= metrics["viewport"] + 1
 
 
-def test_responsive_sin_scroll_horizontal(page, base_url):
-    """T035: cubre CA-I-19, CA-I-20."""
-    for ancho in _ANCHOS_DE_REFERENCIA:
-        page.set_viewport_size({"width": ancho, "height": 800})
-        page.goto(base_url + "/")
-        assert _sin_scroll_horizontal(page), f"scroll horizontal en Configuración a {ancho}px"
-        expect(page.locator("#pantalla-configuracion")).to_be_visible()
-
-    for ancho in _ANCHOS_DE_REFERENCIA:
-        page.set_viewport_size({"width": ancho, "height": 800})
-        _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
-        assert _sin_scroll_horizontal(page), f"scroll horizontal en En Juego a {ancho}px"
-        expect(page.locator("#marcador-sesion")).to_be_visible()
-        expect(_celda(page, 0, 0)).to_be_visible()
+def _assert_inside_viewport(page: Page, selector: str) -> None:
+    box = page.locator(selector).bounding_box()
+    assert box is not None
+    assert box["x"] >= -1
+    assert box["x"] + box["width"] <= page.viewport_size["width"] + 1
 
 
-def test_responsive_objetivo_tactil(page, base_url):
-    """T036: cubre CA-I-21."""
-    page.set_viewport_size({"width": 375, "height": 800})
-    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
+@pytest.mark.parametrize("viewport_width", [375, 768, 1440])
+def test_responsive_sin_scroll_horizontal(
+    page: Page,
+    live_server_url: str,
+    viewport_width: int,
+) -> None:
+    """CA-I-19 y CA-I-20: flujo completo sin desplazamiento horizontal."""
 
-    for fila in range(3):
-        for col in range(3):
-            caja = _celda(page, fila, col).bounding_box()
-            assert caja["width"] >= 44, f"casilla ({fila},{col}) ancho {caja['width']}px < 44px"
-            assert caja["height"] >= 44, f"casilla ({fila},{col}) alto {caja['height']}px < 44px"
+    initial = _game_state(game_id=f"responsive-{viewport_width}")
+    finished = _game_state(
+        game_id=f"responsive-{viewport_width}",
+        board=[["X", "X", "X"], ["O", "O", None], [None, None, None]],
+        status="victoria",
+        winner="X",
+        winning_line=[
+            {"row": 0, "col": 0},
+            {"row": 0, "col": 1},
+            {"row": 0, "col": 2},
+        ],
+    )
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, initial, status=201),
+    )
+    page.route(
+        "**/api/games/*/moves",
+        lambda route: _fulfill_json(route, finished),
+    )
+    page.set_viewport_size({"width": viewport_width, "height": 1000})
+    page.goto(live_server_url)
+
+    expect(page.locator(".scoreboard")).to_be_visible()
+    expect(page.locator("#config-form")).to_be_visible()
+    expect(page.locator("#start-game")).to_be_visible()
+    _assert_inside_viewport(page, ".scoreboard")
+    _assert_inside_viewport(page, "#config-form")
+    _assert_no_horizontal_scroll(page)
+
+    _select_human_game(page)
+    expect(page.locator("#board")).to_be_visible()
+    expect(page.locator("#restart-game")).to_be_visible()
+    _assert_inside_viewport(page, "#board")
+    _assert_inside_viewport(page, "#restart-game")
+    _assert_no_horizontal_scroll(page)
+
+    page.locator("#cell-0-0").click()
+    expect(page.locator("#result-panel")).to_be_visible()
+    _assert_no_horizontal_scroll(page)
+
+    page.get_by_role("button", name="Reiniciar partida").click()
+    expect(page.locator("#app")).to_have_attribute("data-ui-state", "en_juego")
+    expect(page.locator("#score-x")).to_have_text("1")
+    _assert_inside_viewport(page, "#board")
+    _assert_no_horizontal_scroll(page)
 
 
-def test_responsive_resize_preserva_estado(page, base_url):
-    """T037: cubre CA-I-22."""
-    page.set_viewport_size({"width": 1440, "height": 900})
-    _iniciar_partida(page, base_url, modo="humano_vs_humano", ficha_jugador_1="X")
-    _jugar_casilla(page, 0, 0, "X")
-    _celda(page, 1, 1).focus()
-    expect(_celda(page, 1, 1)).to_be_focused()
+def test_responsive_objetivo_tactil(page: Page, live_server_url: str) -> None:
+    """CA-I-21: todas las casillas conservan un objetivo táctil suficiente."""
 
-    page.set_viewport_size({"width": 375, "height": 800})
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, _game_state(), status=201),
+    )
+    page.set_viewport_size({"width": 320, "height": 800})
+    page.goto(live_server_url)
+    _select_human_game(page)
 
-    # El estado de la partida y el foco no cambian por redimensionar: el
-    # layout responsive es puramente CSS, EstadoUI no depende del viewport.
-    expect(_celda(page, 0, 0)).to_have_text("X")
-    expect(page.locator("#pantalla-en_juego #indicador-turno")).to_contain_text("O")
-    expect(page.locator("#marcador-victorias-x")).to_contain_text("0")
-    expect(_celda(page, 1, 1)).to_be_focused()
+    boxes = page.locator(".board-cell").evaluate_all(
+        """cells => cells.map(cell => {
+            const box = cell.getBoundingClientRect();
+            return { width: box.width, height: box.height };
+        })"""
+    )
+    assert len(boxes) == 9
+    assert all(box["width"] >= 44 and box["height"] >= 44 for box in boxes)
+    _assert_no_horizontal_scroll(page)
+
+
+def test_responsive_resize_preserva_estado(
+    page: Page, live_server_url: str
+) -> None:
+    """CA-I-22: redimensionar preserva partida, marcador, fase y foco."""
+
+    movement_state = _game_state(
+        game_id="resize-e2e",
+        mode="continua",
+        phase="movimiento",
+        board=[
+            ["X", "O", "X"],
+            ["O", "X", "O"],
+            [None, None, None],
+        ],
+        turn="X",
+    )
+    page.route(
+        "**/api/games",
+        lambda route: _fulfill_json(route, movement_state, status=201),
+    )
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(live_server_url)
+    _select_human_game(page, variant="Continua")
+    page.locator("#cell-1-1").focus()
+
+    board_before = page.locator(".board-cell").all_text_contents()
+    turn_before = page.locator("#turn-detail").text_content()
+    phase_before = page.locator("#fact-phase").text_content()
+    score_before = page.locator(".score-list").text_content()
+    focus_before = page.evaluate("document.activeElement.id")
+
+    for width in (375, 768, 1440):
+        page.set_viewport_size({"width": width, "height": 900})
+        expect(page.locator(".board-cell")).to_have_text(board_before)
+        expect(page.locator("#turn-detail")).to_have_text(turn_before)
+        expect(page.locator("#fact-phase")).to_have_text(phase_before)
+        expect(page.locator(".score-list")).to_have_text(score_before)
+        assert page.evaluate("document.activeElement.id") == focus_before
+        _assert_inside_viewport(page, "#board")
+        _assert_no_horizontal_scroll(page)

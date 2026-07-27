@@ -1,56 +1,81 @@
-// Estado de UI (EstadoUI) y MarcadorSesion, según data-model.md.
-// Objetos mutables en memoria del navegador; ningún dato aquí proviene de
-// reglas de juego propias — game_state siempre es una copia de solo
-// lectura del último GameState devuelto por el backend.
+export const PANTALLAS = Object.freeze({
+  CONFIGURACION: "configuracion",
+  EN_JUEGO: "en_juego",
+  ESPERANDO_AGENTE: "esperando_agente",
+  TERMINADA: "terminada",
+});
 
-export const EstadoUI = {
-  pantalla: "configuracion", // "configuracion" | "en_juego" | "esperando_agente" | "terminada"
-  configuracion: null, // ConfiguracionPartida | null
-  game_state: null, // GameState | null (última respuesta del motor)
-  foco_actual: null, // string (id del elemento con foco de teclado, CA-I-17)
-  casilla_seleccionada: null, // {row, col} | null (modalidad continua, CA-I-12)
+export function crearConfiguracionBorrador() {
+  return {
+    modo: null,
+    nivel_agente: null,
+    ficha_jugador_1: null,
+    modalidad: null,
+  };
+}
+
+export const estadoUI = {
+  pantalla: PANTALLAS.CONFIGURACION,
+  configuracion: null,
+  configuracion_borrador: crearConfiguracionBorrador(),
+  game_state: null,
+  foco_actual: "cell-0-0",
+  casilla_seleccionada: null,
+  solicitud_en_curso: false,
+  aviso: null,
 };
 
-export const MarcadorSesion = {
+export const marcadorSesion = {
   victorias_x: 0,
   victorias_o: 0,
   empates: 0,
 };
 
-/** ConfiguracionPartida vacía, punto de partida de la pantalla de Configuración. */
-export function crearConfiguracionVacia() {
-  return {
-    modo: null, // "humano_vs_humano" | "humano_vs_agente"
-    nivel_agente: null, // "sencillo" | "medio" | "complejo" | null
-    ficha_jugador_1: null, // "X" | "O"
-    modalidad: null, // "clasica" | "continua"
-  };
+const observadores = new Set();
+
+export function suscribirEstado(observador) {
+  observadores.add(observador);
+  return () => observadores.delete(observador);
 }
 
-/**
- * CA-I-04: una ConfiguracionPartida solo habilita el inicio cuando modo,
- * ficha_jugador_1 y modalidad tienen valor, y nivel_agente tiene valor si
- * modo = "humano_vs_agente".
- */
-export function configuracionEstaCompleta(configuracion) {
-  if (configuracion == null) return false;
-  const { modo, nivel_agente, ficha_jugador_1, modalidad } = configuracion;
-  if (!modo || !ficha_jugador_1 || !modalidad) return false;
-  if (modo === "humano_vs_agente" && !nivel_agente) return false;
-  return true;
-}
-
-const PANTALLAS = ["configuracion", "en_juego", "esperando_agente", "terminada"];
-
-/**
- * Transiciona EstadoUI.pantalla y muestra/oculta los 4 contenedores de
- * index.html (uno por valor de `pantalla`) de forma centralizada, para que
- * config-screen.js y game-screen.js no dupliquen esta lógica.
- */
-export function mostrarPantalla(pantalla) {
-  EstadoUI.pantalla = pantalla;
-  for (const nombre of PANTALLAS) {
-    const elemento = document.getElementById(`pantalla-${nombre}`);
-    if (elemento) elemento.hidden = nombre !== pantalla;
+export function notificarEstado() {
+  for (const observador of observadores) {
+    observador(estadoUI);
   }
+}
+
+export function actualizarEstadoUI(cambios, { notificar = true } = {}) {
+  Object.assign(estadoUI, cambios);
+  if (notificar) {
+    notificarEstado();
+  }
+}
+
+export function actualizarConfiguracionBorrador(cambios) {
+  Object.assign(estadoUI.configuracion_borrador, cambios);
+  notificarEstado();
+}
+
+export function establecerAviso(tipo, mensaje) {
+  actualizarEstadoUI({
+    aviso: mensaje ? { tipo, mensaje } : null,
+  });
+}
+
+export function limpiarAviso({ notificar = true } = {}) {
+  actualizarEstadoUI({ aviso: null }, { notificar });
+}
+
+export function volverAConfiguracion() {
+  actualizarEstadoUI({
+    pantalla: PANTALLAS.CONFIGURACION,
+    game_state: null,
+    casilla_seleccionada: null,
+    solicitud_en_curso: false,
+    aviso: null,
+    configuracion_borrador:
+      estadoUI.configuracion === null
+        ? estadoUI.configuracion_borrador
+        : { ...estadoUI.configuracion },
+  });
 }

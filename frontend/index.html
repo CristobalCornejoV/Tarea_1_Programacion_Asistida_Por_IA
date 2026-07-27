@@ -1,30 +1,423 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tres en Raya</title>
-  <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-  <h1>Tres en Raya</h1>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Interfaz accesible para jugar Tres en Raya en modalidad clásica o continua."
+    >
+    <title>Tres en Raya — Partida</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 
-  <div id="marcador-sesion" aria-live="polite"></div>
+    <div id="app" class="app-shell" data-ui-state="configuracion">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">3×3</span>
+          <div>
+            <p class="eyebrow">Partida estratégica</p>
+            <h1>Tres en Raya</h1>
+          </div>
+        </div>
 
-  <!-- Los 4 estados de EstadoUI.pantalla (data-model.md); cada uno se
-       muestra/oculta vía el atributo `hidden` según la pantalla vigente
-       (wiring en las tareas de cada historia de usuario). -->
-  <section id="pantalla-configuracion" data-pantalla="configuracion"></section>
-  <section id="pantalla-en_juego" data-pantalla="en_juego" hidden></section>
-  <section id="pantalla-esperando_agente" data-pantalla="esperando_agente" hidden></section>
-  <section id="pantalla-terminada" data-pantalla="terminada" hidden></section>
+        <section class="scoreboard" aria-labelledby="scoreboard-title">
+          <div class="scoreboard-heading">
+            <p id="scoreboard-title">Marcador de sesión</p>
+            <span>Se conserva al reiniciar</span>
+          </div>
+          <dl class="score-list">
+            <div class="score-item score-x">
+              <dt>Victorias X</dt>
+              <dd id="score-x">0</dd>
+            </div>
+            <div class="score-item score-draw">
+              <dt>Empates</dt>
+              <dd id="score-draws">0</dd>
+            </div>
+            <div class="score-item score-o">
+              <dt>Victorias O</dt>
+              <dd id="score-o">0</dd>
+            </div>
+          </dl>
+        </section>
+      </header>
 
-  <script type="module" src="js/state.js"></script>
-  <script type="module" src="js/api.js"></script>
-  <script type="module" src="js/board.js"></script>
-  <script type="module" src="js/config-screen.js"></script>
-  <script type="module" src="js/game-screen.js"></script>
-  <script type="module" src="js/scoreboard.js"></script>
-  <script type="module" src="js/keyboard.js"></script>
-</body>
+      <main id="main-content" class="main-content">
+        <section
+          id="config-screen"
+          class="screen config-screen"
+          aria-labelledby="config-title"
+        >
+          <div class="screen-intro">
+            <p class="step-label">Configuración</p>
+            <h2 id="config-title">Prepara la próxima partida</h2>
+            <p>
+              Elige quién juega, asigna las fichas y selecciona una modalidad.
+            </p>
+          </div>
+
+          <form id="config-form" class="config-form" novalidate>
+            <fieldset class="control-group" data-config-field="modo">
+              <legend>
+                <span class="field-number">01</span>
+                Modo de partida
+              </legend>
+              <div class="option-grid option-grid-two">
+                <label class="option-card">
+                  <input
+                    type="radio"
+                    name="modo"
+                    value="humano_vs_humano"
+                  >
+                  <span class="option-copy">
+                    <strong>Humano vs Humano</strong>
+                    <small>Dos jugadores en el mismo dispositivo</small>
+                  </span>
+                </label>
+                <label class="option-card">
+                  <input
+                    type="radio"
+                    name="modo"
+                    value="humano_vs_agente"
+                  >
+                  <span class="option-copy">
+                    <strong>Humano vs Agente</strong>
+                    <small>Juega contra una estrategia automática</small>
+                  </span>
+                </label>
+              </div>
+              <p class="field-error" data-error-for="modo"></p>
+            </fieldset>
+
+            <fieldset
+              id="agent-level-group"
+              class="control-group"
+              data-config-field="nivel_agente"
+              hidden
+              disabled
+            >
+              <legend>
+                <span class="field-number">02</span>
+                Nivel del agente
+              </legend>
+              <div class="option-grid option-grid-three">
+                <label class="option-card compact">
+                  <input type="radio" name="nivel_agente" value="sencillo">
+                  <span class="option-copy">
+                    <strong>Sencillo</strong>
+                    <small>Selección básica</small>
+                  </span>
+                </label>
+                <label class="option-card compact">
+                  <input type="radio" name="nivel_agente" value="medio">
+                  <span class="option-copy">
+                    <strong>Medio</strong>
+                    <small>Ataca y bloquea</small>
+                  </span>
+                </label>
+                <label class="option-card compact">
+                  <input type="radio" name="nivel_agente" value="complejo">
+                  <span class="option-copy">
+                    <strong>Complejo</strong>
+                    <small>Estrategia óptima</small>
+                  </span>
+                </label>
+              </div>
+              <p class="field-error" data-error-for="nivel_agente"></p>
+            </fieldset>
+
+            <fieldset class="control-group" data-config-field="ficha_jugador_1">
+              <legend>
+                <span class="field-number">03</span>
+                Asignación de fichas
+              </legend>
+              <div class="option-grid option-grid-two">
+                <label class="option-card token-option">
+                  <input type="radio" name="ficha_jugador_1" value="X">
+                  <span class="token-preview token-x" aria-hidden="true">X</span>
+                  <span class="option-copy">
+                    <strong>Jugador 1 usa X</strong>
+                    <small>Jugador 2 usa O</small>
+                  </span>
+                </label>
+                <label class="option-card token-option">
+                  <input type="radio" name="ficha_jugador_1" value="O">
+                  <span class="token-preview token-o" aria-hidden="true">O</span>
+                  <span class="option-copy">
+                    <strong>Jugador 1 usa O</strong>
+                    <small>Jugador 2 usa X</small>
+                  </span>
+                </label>
+              </div>
+              <p class="field-error" data-error-for="ficha_jugador_1"></p>
+            </fieldset>
+
+            <fieldset class="control-group" data-config-field="modalidad">
+              <legend>
+                <span class="field-number">04</span>
+                Modalidad
+              </legend>
+              <div class="option-grid option-grid-two">
+                <label class="option-card">
+                  <input type="radio" name="modalidad" value="clasica">
+                  <span class="option-copy">
+                    <strong>Clásica</strong>
+                    <small>Coloca fichas hasta ganar o empatar</small>
+                  </span>
+                </label>
+                <label class="option-card">
+                  <input type="radio" name="modalidad" value="continua">
+                  <span class="option-copy">
+                    <strong>Continua</strong>
+                    <small>Después de colocar, mueve tus fichas</small>
+                  </span>
+                </label>
+              </div>
+              <p class="field-error" data-error-for="modalidad"></p>
+            </fieldset>
+
+            <div
+              id="config-error-summary"
+              class="notice notice-error"
+              role="alert"
+              tabindex="-1"
+              hidden
+            ></div>
+
+            <button id="start-game" class="button button-primary" type="submit">
+              Iniciar partida
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+        </section>
+
+        <section
+          id="game-screen"
+          class="screen game-screen"
+          aria-labelledby="game-title"
+          hidden
+        >
+          <div class="game-layout">
+            <div class="game-primary">
+              <div class="game-heading">
+                <div>
+                  <p id="game-state-label" class="step-label">En juego</p>
+                  <h2 id="game-title">Tablero de partida</h2>
+                </div>
+                <button
+                  id="change-config"
+                  class="button button-quiet"
+                  type="button"
+                >
+                  Cambiar configuración
+                </button>
+              </div>
+
+              <div id="turn-card" class="turn-card" aria-live="polite">
+                <span id="turn-token" class="turn-token token-x" aria-hidden="true">
+                  X
+                </span>
+                <div>
+                  <p id="turn-player">Turno del Jugador 1</p>
+                  <span id="turn-detail">Juega con la ficha X</span>
+                </div>
+              </div>
+
+              <div
+                id="agent-wait"
+                class="agent-wait"
+                role="status"
+                aria-live="polite"
+                hidden
+              >
+                <span class="spinner" aria-hidden="true"></span>
+                <div>
+                  <strong>El agente está calculando</strong>
+                  <span>El tablero permanecerá bloqueado.</span>
+                </div>
+              </div>
+
+              <div
+                id="game-notice"
+                class="notice"
+                role="alert"
+                aria-live="assertive"
+                hidden
+              ></div>
+
+              <div class="board-frame">
+                <div
+                  id="board"
+                  class="board"
+                  role="grid"
+                  aria-label="Tablero de Tres en Raya, 3 filas por 3 columnas"
+                  aria-describedby="board-help"
+                >
+                  <button
+                    id="cell-0-0"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="0"
+                    data-col="0"
+                    tabindex="0"
+                    aria-label="Fila 1, columna 1, vacía"
+                  ></button>
+                  <button
+                    id="cell-0-1"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="0"
+                    data-col="1"
+                    tabindex="-1"
+                    aria-label="Fila 1, columna 2, vacía"
+                  ></button>
+                  <button
+                    id="cell-0-2"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="0"
+                    data-col="2"
+                    tabindex="-1"
+                    aria-label="Fila 1, columna 3, vacía"
+                  ></button>
+                  <button
+                    id="cell-1-0"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="1"
+                    data-col="0"
+                    tabindex="-1"
+                    aria-label="Fila 2, columna 1, vacía"
+                  ></button>
+                  <button
+                    id="cell-1-1"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="1"
+                    data-col="1"
+                    tabindex="-1"
+                    aria-label="Fila 2, columna 2, vacía"
+                  ></button>
+                  <button
+                    id="cell-1-2"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="1"
+                    data-col="2"
+                    tabindex="-1"
+                    aria-label="Fila 2, columna 3, vacía"
+                  ></button>
+                  <button
+                    id="cell-2-0"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="2"
+                    data-col="0"
+                    tabindex="-1"
+                    aria-label="Fila 3, columna 1, vacía"
+                  ></button>
+                  <button
+                    id="cell-2-1"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="2"
+                    data-col="1"
+                    tabindex="-1"
+                    aria-label="Fila 3, columna 2, vacía"
+                  ></button>
+                  <button
+                    id="cell-2-2"
+                    class="board-cell"
+                    type="button"
+                    role="gridcell"
+                    data-row="2"
+                    data-col="2"
+                    tabindex="-1"
+                    aria-label="Fila 3, columna 3, vacía"
+                  ></button>
+                </div>
+              </div>
+
+              <p id="board-help" class="board-help">
+                Usa las flechas para recorrer las casillas y Enter o Espacio
+                para seleccionar.
+              </p>
+            </div>
+
+            <aside class="game-sidebar" aria-label="Información de la partida">
+              <section class="info-card">
+                <p class="info-label">Partida actual</p>
+                <dl class="game-facts">
+                  <div>
+                    <dt>Modo</dt>
+                    <dd id="fact-mode">Humano vs Humano</dd>
+                  </div>
+                  <div>
+                    <dt>Modalidad</dt>
+                    <dd id="fact-variant">Clásica</dd>
+                  </div>
+                  <div id="fact-level-row" hidden>
+                    <dt>Nivel</dt>
+                    <dd id="fact-level">Sencillo</dd>
+                  </div>
+                  <div id="fact-phase-row" hidden>
+                    <dt>Fase</dt>
+                    <dd id="fact-phase">Colocación</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section
+                id="movement-help"
+                class="info-card movement-help"
+                hidden
+              >
+                <p class="info-label">Fase de movimiento</p>
+                <h3>Elige una ficha señalada</h3>
+                <p>
+                  Después selecciona una de las casillas disponibles como
+                  destino.
+                </p>
+              </section>
+
+              <section id="result-panel" class="result-panel" hidden>
+                <p class="info-label">Partida terminada</p>
+                <span id="result-symbol" class="result-symbol" aria-hidden="true">
+                  X
+                </span>
+                <h3 id="result-title">Victoria de X</h3>
+                <p id="result-message">La línea ganadora está resaltada.</p>
+              </section>
+
+              <button
+                id="restart-game"
+                class="button button-primary button-full"
+                type="button"
+              >
+                Reiniciar partida
+              </button>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <p>La partida se controla desde la API del motor.</p>
+        <p>Compatible con mouse y teclado.</p>
+      </footer>
+    </div>
+
+    <script type="module" src="/js/game-screen.js"></script>
+  </body>
 </html>

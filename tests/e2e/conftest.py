@@ -1,54 +1,69 @@
-"""Arnés de pruebas e2e: levanta la app FastAPI real (motor + agentes +
-frontend estático) en un hilo, para que Playwright navegue contra ella
-como un navegador real (T003).
-"""
+"""Infraestructura compartida para las pruebas de interfaz en navegador."""
 
-import threading
+from __future__ import annotations
+
+import socket
+import subprocess
+import sys
 import time
+import urllib.error
+import urllib.request
+from collections.abc import Iterator
+from pathlib import Path
 
-import httpx
 import pytest
-import uvicorn
-
-from backend.src.main import app
-
-_PUERTO = 8199
 
 
-class _ServidorEnHilo:
-    def __init__(self, app, host: str, port: int):
-        self._config = uvicorn.Config(app, host=host, port=port, log_level="warning")
-        self._server = uvicorn.Server(self._config)
-        self._thread = threading.Thread(target=self._server.run, daemon=True)
-        self.base_url = f"http://{host}:{port}"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
-    def start(self) -> None:
-        self._thread.start()
-        for _ in range(100):
-            if getattr(self._server, "started", False):
-                return
-            time.sleep(0.05)
-        raise RuntimeError("El servidor de pruebas e2e no arrancó a tiempo.")
 
-    def stop(self) -> None:
-        self._server.should_exit = True
-        self._thread.join(timeout=5)
+def _available_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as candidate:
+        candidate.bind(("127.0.0.1", 0))
+        return int(candidate.getsockname()[1])
 
 
 @pytest.fixture(scope="session")
-def base_url() -> str:
-    """Sobrescribe el `base_url` de pytest-playwright con el servidor real."""
-    servidor = _ServidorEnHilo(app, host="127.0.0.1", port=_PUERTO)
-    servidor.start()
-    yield servidor.base_url
-    servidor.stop()
+def live_server_url() -> Iterator[str]:
+    """Levanta la aplicación real en un puerto libre durante la suite E2E."""
 
+    port = _available_port()
+    url = f"http://127.0.0.1:{port}"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "backend.src.main:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+        ],
+        cwd=REPOSITORY_ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+    )
 
-@pytest.fixture(autouse=True)
-def _reiniciar_almacen_de_partidas():
-    """Aísla cada test e2e limpiando el almacén en memoria del motor."""
-    from backend.src.api.games import partidas
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError("El servidor de pruebas terminó antes de iniciar.")
+        try:
+            with urllib.request.urlopen(url, timeout=0.25) as response:
+                if response.status == 200:
+                    break
+        except (urllib.error.URLError, TimeoutError):
+            time.sleep(0.1)
+    else:
+        process.terminate()
+        raise RuntimeError("El servidor de pruebas no respondió a tiempo.")
 
-    partidas.clear()
-    yield
-    partidas.clear()
+    yield url
+
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
