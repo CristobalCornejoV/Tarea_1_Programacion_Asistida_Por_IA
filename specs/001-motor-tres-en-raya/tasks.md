@@ -35,7 +35,7 @@ independientes.
 
 **Purpose**: Inicialización del proyecto backend compartido por las tres specs
 
-- [ ] T001 Crear la estructura de directorios `backend/src/{models,engine,api}`,
+- [X] T001 Crear la estructura de directorios `backend/src/{models,engine,api}`,
       `backend/tests/{unit,contract}` y `frontend/{css,js}` según
       `plan.md` → Project Structure
 - [ ] T002 [P] Inicializar el proyecto Python en `backend/pyproject.toml` (o
